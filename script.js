@@ -4,8 +4,27 @@ const pokemonDisplay = document.getElementById("pokemonDisplay");
 const teamContainer = document.getElementById("teamContainer");
 
 let team = JSON.parse(localStorage.getItem("pokemonTeam")) || [];
+let currentPokemon = null;
 
-// Display the team
+function saveTeam()
+{
+    localStorage.setItem("pokemonTeam", JSON.stringify(team));
+}
+
+function showMessage(message, isError = false)
+{
+    const message = document.createElement("p");
+    message.textContent = message;
+    message.className = isError ? "message error" : "message success";
+    pokemonDisplay.prepend(message);
+    setTimeout(() => message.remove(), 3000);
+}
+
+function capitalize(str)
+{
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 function displayTeam() {
     if (team.length === 0) {
         teamContainer.innerHTML = `<p>Your team is empty. Add some Pokémon!</p>`;
