@@ -13,11 +13,11 @@ function saveTeam()
 
 function showMessage(message, isError = false)
 {
-    const message = document.createElement("p");
-    message.textContent = message;
-    message.className = isError ? "message error" : "message success";
-    pokemonDisplay.prepend(message);
-    setTimeout(() => message.remove(), 3000);
+    const msg = document.createElement("p");
+    msg.textContent = message;
+    msg.className = isError ? "message error" : "message success";
+    pokemonDisplay.prepend(msg);
+    setTimeout(() => msg.remove(), 3000);
 }
 
 function capitalize(str)
@@ -35,12 +35,11 @@ function displayTeam()
 
     teamContainer.innerHTML = "";
 
-    team.forEach((pokemon, index) => 
-    {
+    team.forEach((pokemon, index) => {
         const card = document.createElement("div");
         card.className = "teamCard";
 
-        const typeBadges = pokemon.types.map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
+        const typeBadges = (pokemon.types || []).map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
 
         card.innerHTML = `<img src="${pokemon.image}" alt="${pokemon.name}"/>
             <p class="pokemon-name">${capitalize(pokemon.name)}</p>
@@ -50,8 +49,8 @@ function displayTeam()
         teamContainer.appendChild(card);
     });
 
-    document.querySelectorAll(".remove-btn").forEach(button => {
-        button.addEventListener("click", (e) => {
+    document.querySelectorAll(".remove-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
             const index = parseInt(e.target.dataset.index);
             removeFromTeam(index);
         });
@@ -60,18 +59,16 @@ function displayTeam()
 
 function addToTeam(pokemon)
 {
-    if(!currentPokemon)
-    {
-        return;
-    }
+    if (!currentPokemon) return;
 
     if (team.length >= 6)
     {
         showMessage("Your team is full! (Maximum 6 Pokémon)", true);
         return;
     }
+
     const alreadyOnTeam = team.some(p => p.name === currentPokemon.name);
-    if(alreadyOnTeam)
+    if (alreadyOnTeam)
     {
         showMessage(`${capitalize(currentPokemon.name)} is already on your team!`, true);
         return;
@@ -95,9 +92,10 @@ function removeFromTeam(index)
 async function searchPokemon()
 {
     const pokemonName = pokemonInput.value.toLowerCase().trim();
-    if(!pokemonName)
+
+    if (!pokemonName)
     {
-        pokemonDisplay.innerHTML = `<p class=message">Searching...</p>`;
+        pokemonDisplay.innerHTML = `<p class="message error">Please enter a Pokémon name.</p>`;
         return;
     }
 
@@ -106,8 +104,9 @@ async function searchPokemon()
     try
     {
         const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonName}`);
-        if(!response.ok) throw new Error("Not found");
+        if (!response.ok) throw new Error("Not found");
         const data = await response.json();
+
         currentPokemon = {
             name: data.name,
             image: data.sprites.front_default,
