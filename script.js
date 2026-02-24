@@ -26,32 +26,61 @@ function capitalize(str)
 }
 
 function displayTeam() {
-    if (team.length === 0) {
-        teamContainer.innerHTML = `<p>Your team is empty. Add some Pokémon!</p>`;
+    if (team.length === 0)
+    {
+        teamContainer.innerHTML = `<p class="emptyMessage">Your team is empty. Search for a Pokémon and add it to your team!</p>`;
         return;
     }
-    teamContainer.innerHTML = team.map((pokemon, index) => `
-        <div style="border: 1px solid #ccc; padding: 10px; margin: 5px 0;">
-            <p><strong>${pokemon.name}</strong></p>
-            <img src="${pokemon.image}" alt="${pokemon.name}" style="width: 100px;">
-            <button onclick="removeFromTeam(${index})">Remove</button>
-        </div>
-    `).join("");
+
+    teamContainer.innerHTML = "";
+
+    team.forEach((pokemon, index) => 
+    {
+        const card = document.createElement("div");
+        card.className = "teamCard";
+
+        const typeBadges = pokemon.types.map(t => `<span class="type-badge type-${t}">${capitalize(t)}</span>`).join("");
+
+        card.innerHTML = `<img src="${pokemon.image}" alt="${pokemon.name}"/>
+            <p class="pokemon-name">${capitalize(pokemon.name)}</p>
+            <div class="type-container">${typeBadges}</div>
+            <button class="remove-btn" data-index="${index}">Remove</button>`;
+
+        teamContainer.appendChild(card);
+    });
+
+    document.querySelectorAll(".remove-btn").forEach(button => {
+        button.addEventListener("click", (e) => {
+            const index = parseInt(e.target.dataset.index);
+            removeFromTeam(index);
+        });
+    });
 }
 
-// Add to team
 function addToTeam(pokemon) {
-    if (team.length >= 6) {
-        alert("Your team is full! (Maximum 6 Pokémon)");
+    if(!currentPokemon)
+    {
         return;
     }
+
+    if (team.length >= 6)
+    {
+        showMessage("Your team is full! (Maximum 6 Pokémon)", true);
+        return;
+    }
+    const alreadyOnTeam = team.some(p => p.name === currentPokemon.name);
+    if(alreadOnTeam)
+    {
+        showMessage(`${capitalize(currentPokemon.name)} is already on your team!`, true);
+        return;
+    }
+
     team.push(pokemon);
-    localStorage.setItem("pokemonTeam", JSON.stringify(team));
+    saveTeam();
     displayTeam();
-    alert(`${pokemon.name} added to your team!`);
+    showMessage(`${capitalize(currentPokemon.name)} added to your team!`);
 }
 
-// Remove from team
 function removeFromTeam(index) {
     const removed = team[index];
     team.splice(index, 1);
