@@ -4,15 +4,18 @@
         <meta charset="UTF-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
         <title>Pokémon Team Builder</title>
-        <link rel="stylesheet" href="styles.css"/>
+        <link rel="stylesheet" href="style.css"/>
     </head>
     <body>
+        <header>
         <h1>Pokémon Team Builder</h1>
+        </header>
 
         <main>
             <section class="searchSection">
                 <input type="text" id="pokemonInput" placeholder="Enter Pokémon name or number" autocomplete="off"/>
                 <button id="searchBtn">Search</button>
+                <button id="randBtn">? Random</button>
             </section>
 
             <section id="pokemonDisplay"></section>
@@ -21,6 +24,10 @@
                 <h2>Your Team</h2>
                 <div id="teamContainer"></div>
             </Section>
+
+            <section class="weaknessSection">
+                <div id="weaknessChart"></div>
+            </section>
         </main>
 
         <script src="script.js"></script>
