@@ -119,21 +119,36 @@ async function searchPokemon()
         if (!response.ok) throw new Error("Not found");
         const data = await response.json();
 
-        const stats = data.stats.map(s => ({ name: s.stat.name, value: s.baseStat }));
-        const abilities = data.abilities.map(s => a.ability.name.replace("-", " "));
+        const stats = data.stats.map(s => ({ name: s.stat.name, value: s.base_stat }));
+        const abilities = data.abilities.map(a => a.ability.name.replace("-", " "));
 
         currentPokemon = {
             name: data.name,
             image: data.sprites.front_default,
-            types: data.types.map(t => t.type.name)
+            types: data.types.map(t => t.type.name),
+            stats: stats,
+            abilities: abilities
         };
--", "
+
+        const statBars = currentPokemon.stats.map(s => `
+        <div class="statRow">
+            <span class="statLabel">${s.name}</span>
+            <div class="statBarBg">
+                <div class="statBarFill" style="width: ${Math.min(s.value / 255 * 100, 100)}%"></div>
+            </div>
+            <span class="statValue">${s.value}</span>
+        </div>
+        `).join("");
+
+        const abilitiesDisplay = currentPokemon.abilities.map(a => capitalize(a)).join(" / ");
         const typeBadges = currentPokemon.types.map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
         pokemonDisplay.innerHTML = `
             <div class="pokemonCard">
                 <h2>${capitalize(currentPokemon.name)}</h2>
                 <img src="${currentPokemon.image}" alt="${currentPokemon.name}">
                 <div class="typeContainer">${typeBadges}</div>
+                <p>Ability: ${abilitiesDisplay}</p>
+                <div class="statContainer">${statBars}</div>
                 <button id="addBtn">Add to Team</button>
             </div>
         `;
