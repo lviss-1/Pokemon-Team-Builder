@@ -41,6 +41,18 @@ function displayTeam()
 
         const typeBadges = (pokemon.types || []).map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
 
+        const statBars = (pokemon.stats || []).map(s => `
+            <div class="statRow">
+                <span class="statLabel">${s.name}</span>
+                <div class="statBarBg">
+                    <div class="statBarFill" style="width: ${Math.min(s.value / 255 * 100, 100)}%"></div>
+                </div>
+                <span class="statValue">${s.value}</span>
+            </div>
+        `).join("");
+
+        const abilities = (pokemon.abilities || []).map(a => capitalize(a)).join(" / ");
+
         card.innerHTML = `<img src="${pokemon.image}" alt="${pokemon.name}"/>
             <p class="pokemon-name">${capitalize(pokemon.name)}</p>
             <div class="type-container">${typeBadges}</div>
@@ -107,12 +119,15 @@ async function searchPokemon()
         if (!response.ok) throw new Error("Not found");
         const data = await response.json();
 
+        const stats = data.stats.map(s => ({ name: s.stat.name, value: s.baseStat }));
+        const abilities = data.abilities.map(s => a.ability.name.replace("-", " "));
+
         currentPokemon = {
             name: data.name,
             image: data.sprites.front_default,
             types: data.types.map(t => t.type.name)
         };
-
+-", "
         const typeBadges = currentPokemon.types.map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
         pokemonDisplay.innerHTML = `
             <div class="pokemonCard">
