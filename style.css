@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -5,119 +7,139 @@
 }
 
 body {
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f0f0f0;
-    color: #333;
+    font-family: 'VT323', Tahoma, monospace;
+    background-color: #1a1f3a;
+    color: #1a1f3a;
+    min-height: 100vh;
     padding: 20px;
+    font-size: 18px;
 }
 
 header {
     text-align: center;
     margin-bottom: 24px;
+    padding: 20px;
+    background-color: #2a3a6e;
+    border: 4 px solid #f8d030;
+    border-radius: 10px;
 }
 
-header h1 {
-    font-size: 2.5em;
-    color: #e63946;
+.site-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.4rem;
+    color: #f0f4ff;
+    letter-spacing: 2px;
 }
 
 .search-section {
     display: flex;
     justify-content: center;
     gap: 10px;
+    flex-wrap: wrap;
     margin-bottom: 24px;
+    padding: 16px;
+    background-color: #2a3a6e;
+    border: 3px solid #6a8ac8;
+    border-radius: 8px;
 }
 
 .search-section input {
-    padding: 10px 14px;
-    font-size: 1rem;
-    border: 2px solid #ccc;
-    border-radius: 8px;
-    width: 260px;
+    font-family: 'VT323', monospace;
+    padding: 8px 14px;
+    font-size: 1.2rem;
+    background-color: #f0f4ff;
+    border: 3px solid #6a8ac8;
+    border-radius: 6px;
+    color: #1a1f3a;
+    width: 240px;
     outline: none;
-    transition: border-color 0.2s;
 }
 
 .search-section input:focus {
-    border-color: #e63946;
+    border-color: #f8d030;
 }
 
-.search-section button {
+.search-section input::placeholder {
+    color: #8aaad0;
+}
+
+button {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.55rem;
     padding: 10px 14px;
-    font-size: 1rem;
-    background-color: #e63946;
-    color: white;
-    border: none;
-    border-radius: 8px;
+    border: 3px solid #1a1f3a;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    box-shadow: 3px 3px 0 #1a1f3a;
+    letter-spacing: 1px;
 }
 
-.search-section button:hover {
-    background-color: #c1121f;
+button:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 #1a1f3a;
+}
+
+#searchBtn {
+    background-color: #f8d030;
+    color: #1a1f3a;
+}
+
+#searchBtn:hover {
+    background-color: #f8d030;
+    color: #1a1f3a;
+}
+
+#randomBtn {
+    background-color: #48c048;
+    color: white;
+}
+
+#randomBtn:hover {
+    background-color: #38a038;
 }
 
 #pokemonDisplay {
-    text-align: center;
+    display: flex;
+    justify-content: center;
     margin-bottom: 24px;
 }
 
-.pokemon-card {
-    display: inline-block;
-    background: white;
-    border-radius: 12px;
+.pokemonCard {
+    background-color: #dce8f5;
+    border: 3px solid #6a8ac8;
+    border-radius: 8px;
+    box-shadow: 4px 4px 0 #8aaad0;
     padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    min-width: 180px;
+    text-align: center;
+    width: 300px;
 }
 
-.pokemon-card h2 {
-    margin-top: 8px;
-    font-size: 1.4em;
+.pokemonCard h2 {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.8rem;
+    margin-bottom: 10px;
+    color: #1a1f3a;
 }
 
-.pokemon-card img {
+.pokemonCard img {
     width: 120px;
     image-rendering: pixelated;
 }
 
-.pokemon-card button {
-    margin-top: 10px;
-    padding: 8px 18px;
-    background-color: #e63946;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.95rem;
-    transition: background-color 0.2s;
+.pokemonCard #addBtn:hover {
+    background-color: #e8c020;
 }
 
-.pokemon-card button:hover {
-    background-color: #c1121f;
-}
-
-.message {
-    margin: 10px auto;
-    font-size: 0.95rem;
-    color: #555;
-}
-
-.message.success {
-    color: #2a9d8f;
-    font-weight: bold;
-}
-
-.message.error {
-    color: #e63946;
-    font-weight: bold;
+.team-section {
+    margin-top: 24px;
 }
 
 .team-section h2 {
-    text-align: center;
-    font-size: 1.6rem;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.8rem;
+    color: #f0f4ff;
     margin-bottom: 16px;
-    color: #333;
+    letter-spacing: 2px;
 }
 
 #teamContainer {
@@ -127,48 +149,47 @@ header h1 {
     justify-content: center;
 }
 
-.empty-message {
-    text-align: center;
-    width: 100%;
-    color: #888;
-}
-
-.team-card {
-    background: white;
-    border-radius: 12px;
+.teamCard {
+    background-color: #dce8f5;
+    border: 3px solid #6a8ac8;
+    border-radius: 8px;
+    box-shadow: 4px 4px 0 #8aaad0;
     padding: 16px;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    width: 140px;
-    transition: transform 0.2s;
+    width: 200px;
 }
 
-.team-card:hover {
-    transform: translateY(-4px);
-}
-
-.team-card img {
-    width: 90px;
+.teamCard img {
+    width: 80px;
     image-rendering: pixelated;
 }
 
 .pokemon-name {
-    margin-top: 8px;
-    padding: 5px 12px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.55rem;
+    margin: 8px 0;
+    color: #1a1f3a;
+    line-height: 1.6;
+}
+
+.ability-text {
+    font-size: 0.95rem;
+    color: #2a3a6e;
+    margin: 4px 0 8px 0;
+}
+
+.remove-btn {
     background-color: #e63946;
     color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: background-color 0.2s;
+    width: 100%;
+    margin-top: 8px;
 }
 
 .remove-btn:hover {
-    background-color: #c1121f;
+    background-color: #c02020;
 }
 
-.type-container {
+.type-container, .typeContainer {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -176,13 +197,111 @@ header h1 {
     margin: 6px 0;
 }
 
-.type-badge {
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: bold;
+.typeBadge {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.4rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 2px solid rgba(0, 0, 0, 0.2);
     color: white;
-    text-transform: capitalize;
+    letter-spacing: 1px;
+}
+
+.statBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 10px 0;
+    text-align: left;
+}
+
+.statRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.statLabel {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.35rem;
+    color: #1a1f3a;
+    width: 80px;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+.statBarBg {
+    flex: 1;
+    height: 10px;
+    background-color: #b8cfe9;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+}
+
+.statBarFill {
+    height: 100%;
+    background-color: #48c048;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+}
+
+.statValue {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.4rem;
+    color: #1a1f3a;
+    width: 24px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.weakness-section {
+    margin-top: 8px;
+}
+
+.chart-panel {
+    background-color: #dce8f5;
+    border: 3px solid #6a8ac8;
+    border-radius: 8px;
+    box-shadow: 4px 4px 0 #8aaad0;
+    padding: 16px;
+}
+
+.chart-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.65rem;
+    color: #1a1f3a;
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+}
+
+.chart-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.message {
+    font-family: 'VT323', monospace;
+    font-size: 1.1rem;
+    padding: 10px 14px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.message.success {
+    background-color: #d4f0d4;
+    color: #1a6a1a;
+}
+
+.message.error {
+    background-color: #f0d4d4;
+    color: #6a1a1a;
+}
+
+.emptyMessage {
+    color: #b8cfe8;
+    text-align: center;
+    font-size: 1rem;
 }
 
 .type-fire     { background-color: #F08030; }
@@ -203,3 +322,16 @@ header h1 {
 .type-bug      { background-color: #A8B820; }
 .type-ghost    { background-color: #705898; }
 .type-steel    { background-color: #B8B8D0; color: #333; }
+
+@media (max-width: 600px) {
+    .site-title {
+        font-size: 0.9rem;
+    }
+    .search-section input {
+        width: 100%;
+    }
+    #teamContainer {
+        flex-direction: column;
+        align-items: center;
+    }
+}
