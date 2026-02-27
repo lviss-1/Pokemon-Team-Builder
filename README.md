@@ -17,8 +17,14 @@ This is a web app that lets you search for Pokemon and build a team of 6. It is 
 * Users Pokemon team is saved in localStorage so it stays on the page after refreshing
 * Allows for the removal of Pokemon as well
 
-## What I learned
+## What I learned:
 
 * How to fetch data from a public API using async/await
 * How to save and load data with localStorage
 * DOM manipulation with JavaScript
+
+## Features I want to implement:
+
+* Display the base stats and abilites of Pokemon
+* Random Pokemon Button that searches for a random Pokemon
+* Type weakness chart so user can see which Pokemon would be good/bad against others

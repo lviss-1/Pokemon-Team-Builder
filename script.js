@@ -1,10 +1,14 @@
 const searchBtn = document.getElementById("searchBtn");
+const randomBtn = document.getElementById("randomBtn");
+const weaknessChart = document.getElementById("weaknessChart");
 const pokemonInput = document.getElementById("pokemonInput");
 const pokemonDisplay = document.getElementById("pokemonDisplay");
 const teamContainer = document.getElementById("teamContainer");
 
 let team = JSON.parse(localStorage.getItem("pokemonTeam")) || [];
 let currentPokemon = null;
+
+const AMOUNT_OF_POKEMON = 1025;
 
 function saveTeam()
 {
@@ -23,6 +27,46 @@ function showMessage(message, isError = false)
 function capitalize(str)
 {
     return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+async function displayWeaknessChart()
+{
+    if (team.length === 0)
+    {
+        weaknessChart.innerHTML = `<p class="emptyMessage">Add Pokémon to your team to see type weaknesses!</p>`;
+        return;
+    }
+
+    weaknessChart.innerHTML = `<p class="message">Loading type data...</p>`;
+
+    const weaknesses = new Set();
+
+    try
+    {
+        for (const pokemon of team)
+        {
+            for (const type of pokemon.types)
+            {
+                const response = await fetch(`https://pokeapi.co/api/v2/type/${type}`);
+                const data = await response.json();
+                data.damage_relations.double_damage_from.forEach(t => {weaknesses.add(t.name);});
+            }
+        }
+
+        const weaknessList = Array.from(weaknesses);
+
+        weaknessChart.innerHTML = `
+        <div class="chartPanel">
+            <h3 class="chartTitle">Team Weaknesses</h3>
+            <div class="chartBadges">
+                ${weaknessList.length > 0 ? weaknessList.map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("") : `<p class="emptyMessage">No common weaknesses found!</p>`}
+            </div>
+        </div>
+        `;
+    } catch (error)
+    {
+        weaknessChart.innerHTML = `<p class="message error">Failed to load type data. Please try again later.</p>`;
+    }
 }
 
 function displayTeam()
@@ -67,9 +111,11 @@ function displayTeam()
             removeFromTeam(index);
         });
     });
+
+    displayWeaknessChart();
 }
 
-function addToTeam(pokemon)
+function addToTeam()
 {
     if (!currentPokemon) return;
 
@@ -163,7 +209,64 @@ async function searchPokemon()
     }
 }
 
+async function randomPokemon()
+{
+    const randomId = Math.floor(Math.random() * AMOUNT_OF_POKEMON) + 1;
+    pokemonInput.value = "";
+    pokemonDisplay.innerHTML = `<p class="message">Getting a random Pokémon...</p>`;
+    try {
+        const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${randomId}`);
+        if (!response.ok) throw new Error("Not found");
+        const data = await response.json();
+
+        const stats = data.stats.map(a => ({
+            name: a.stat.name,
+            value: a.base_stat
+        }));
+        const abilities = data.abilities.map(a => a.ability.name.replace("-", " "));
+
+        currentPokemon = {
+            name: data.name,
+            image: data.sprites.front_default,
+            types: data.types.map(t => t.type.name),
+            stats: stats,
+            abilities: abilities
+        };
+
+        const typeBadges = currentPokemon.types.map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
+        const statsBars = currentPokemon.stats.map(s => `
+            <div class="statRow">
+                <span class="statLabel">${s.name}</span>
+                <div class="statBarBg">
+                    <div class="statBarFill" style="width: ${Math.min(s.value / 255 * 100, 100)}%"></div>
+                </div>
+                <span class="statValue">${s.value}</span>
+            </div>
+        `).join("");
+
+        const abilitiesDisplay = currentPokemon.abilities.map(a => capitalize(a)).join(" / ");
+        pokemonDisplay.innerHTML = `
+            <div class="pokemonCard">
+                <img src="${currentPokemon.image}" alt="${currentPokemon.name}" class="searchSprite"/>
+                <h2 class="pokemonName">${capitalize(currentPokemon.name)}</h2>
+                <div class="typeContainer">${typeBadges}</div>
+                <p class="abilityDisplay">Ability: ${abilitiesDisplay}</p>
+                <div class="statContainer">${statsBars}</div>
+                <button id="addBtn">Add to Team</button>
+            </div>
+        `;
+
+        document.getElementById("addBtn").addEventListener("click", addToTeam);
+    
+    } catch (error)
+    {
+        currentPokemon = null;
+        pokemonDisplay.innerHTML = `<p class="message error">Failed to get random Pokémon.</p>`;
+    }
+}
+
 searchBtn.addEventListener("click", searchPokemon);
+randomBtn.addEventListener("click", randomPokemon);
 
 pokemonInput.addEventListener("keydown", (e) => {
     if(e.key === "Enter") 
