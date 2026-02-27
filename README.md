@@ -42,6 +42,7 @@ This is a web app that lets you search for Pokemon and build a team of 6. It is 
 * Pokedex description for each Pokemon?
 * Use the type weakness chart to recommend types of Pokemon that may synergize with the team?
 * Creating an ability to share or export the team the user made in the web app?
+* Have the stat bars change color depending on the stat amount (eg. )
 
 **What Changed From the Last Version:
 - Added the generation 4 styling to the web app
