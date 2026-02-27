@@ -50,3 +50,6 @@ This is a web app that lets you search for Pokemon and build a team of 6. It is 
 - Added Google Fonts to further customize and add to the "pixelated" aesthetic
 - Further deepened my knowledge on JavaScript coding by getting real experience with APIs, slight mobile responsiveness, and keeping different files (HTML, CSS, and JavaScript) organized and functioning all together
 - Kept the planned features option for future implementations
+
+## Live Demo
+
