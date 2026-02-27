@@ -20,7 +20,7 @@ header {
     margin-bottom: 24px;
     padding: 20px;
     background-color: #2a3a6e;
-    border: 4 px solid #f8d030;
+    border: 4px solid #f8d030;
     border-radius: 10px;
 }
 
@@ -31,7 +31,7 @@ header {
     letter-spacing: 2px;
 }
 
-.search-section {
+.searchSection {
     display: flex;
     justify-content: center;
     gap: 10px;
@@ -43,7 +43,7 @@ header {
     border-radius: 8px;
 }
 
-.search-section input {
+.searchSection input {
     font-family: 'VT323', monospace;
     padding: 8px 14px;
     font-size: 1.2rem;
@@ -55,11 +55,11 @@ header {
     outline: none;
 }
 
-.search-section input:focus {
+.searchSection input:focus {
     border-color: #f8d030;
 }
 
-.search-section input::placeholder {
+.searchSection input::placeholder {
     color: #8aaad0;
 }
 
@@ -130,16 +130,17 @@ button:active {
     background-color: #e8c020;
 }
 
-.team-section {
+.teamSection {
     margin-top: 24px;
 }
 
-.team-section h2 {
+.teamSection h2 {
     font-family: 'Press Start 2P', monospace;
     font-size: 0.8rem;
     color: #f0f4ff;
     margin-bottom: 16px;
     letter-spacing: 2px;
+    text-align: center;
 }
 
 #teamContainer {
@@ -223,7 +224,7 @@ button:active {
 
 .statLabel {
     font-family: 'Press Start 2P', monospace;
-    font-size: 0.35rem;
+    font-size: 0.7rem;
     color: #1a1f3a;
     width: 80px;
     flex-shrink: 0;
@@ -247,18 +248,18 @@ button:active {
 
 .statValue {
     font-family: 'Press Start 2P', monospace;
-    font-size: 0.4rem;
+    font-size: 0.6rem;
     color: #1a1f3a;
     width: 24px;
     text-align: right;
     flex-shrink: 0;
 }
 
-.weakness-section {
+.weaknessSection {
     margin-top: 8px;
 }
 
-.chart-panel {
+.chartPanel {
     background-color: #dce8f5;
     border: 3px solid #6a8ac8;
     border-radius: 8px;
@@ -266,7 +267,7 @@ button:active {
     padding: 16px;
 }
 
-.chart-title {
+.chartTitle {
     font-family: 'Press Start 2P', monospace;
     font-size: 0.65rem;
     color: #1a1f3a;
@@ -274,7 +275,7 @@ button:active {
     letter-spacing: 2px;
 }
 
-.chart-badges {
+.chartBadges {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;

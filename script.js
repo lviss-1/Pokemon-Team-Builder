@@ -100,6 +100,8 @@ function displayTeam()
         card.innerHTML = `<img src="${pokemon.image}" alt="${pokemon.name}"/>
             <p class="pokemon-name">${capitalize(pokemon.name)}</p>
             <div class="type-container">${typeBadges}</div>
+            <p class="ability-text">Ability: ${abilities}</p>
+            <div class="statBlock">${statBars}</div>
             <button class="remove-btn" data-index="${index}">Remove</button>`;
 
         teamContainer.appendChild(card);
@@ -193,8 +195,8 @@ async function searchPokemon()
                 <h2>${capitalize(currentPokemon.name)}</h2>
                 <img src="${currentPokemon.image}" alt="${currentPokemon.name}">
                 <div class="typeContainer">${typeBadges}</div>
-                <p>Ability: ${abilitiesDisplay}</p>
-                <div class="statContainer">${statBars}</div>
+                <p class="ability-text">Ability: ${abilitiesDisplay}</p>
+                <div class="statBlock">${statBars}</div>
                 <button id="addBtn">Add to Team</button>
             </div>
         `;
@@ -250,8 +252,8 @@ async function randomPokemon()
                 <img src="${currentPokemon.image}" alt="${currentPokemon.name}" class="searchSprite"/>
                 <h2 class="pokemonName">${capitalize(currentPokemon.name)}</h2>
                 <div class="typeContainer">${typeBadges}</div>
-                <p class="abilityDisplay">Ability: ${abilitiesDisplay}</p>
-                <div class="statContainer">${statsBars}</div>
+                <p class="ability-text">Ability: ${abilitiesDisplay}</p>
+                <div class="statBlock">${statsBars}</div>
                 <button id="addBtn">Add to Team</button>
             </div>
         `;
