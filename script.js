@@ -39,28 +39,39 @@ async function displayWeaknessChart()
 
     weaknessChart.innerHTML = `<p class="message">Loading type data...</p>`;
 
-    const weaknesses = {};
-    const resistances = {};
-    const immunes = {};
+    const weaknessSet = new Set();
+    const resistanceSet = new Set();
+    const immuneSet = new Set();
 
     try
     {
         for (const pokemon of team)
         {
+            const pokemonWeaknesses = new Set();
+            const pokemonResistances = new Set();
+            const pokemonImmunes = new Set();
+
             for (const type of pokemon.types)
             {
                 const response = await fetch(`https://pokeapi.co/api/v2/type/${type}`);
                 const data = await response.json();
 
-                data.damage_relations.double_damage_from.forEach(t => {weaknesses[t.name] = (weaknesses[t.name] || 0) + 1;});
-                data.damage_relations.half_damage_from.forEach(t => {resistances[t.name] = (resistances[t.name] || 0) + 1;});
-                data.damage_relations.no_damage_from.forEach(t => {immunes[t.name] = (immunes[t.name] || 0) + 1;});
+                data.damage_relations.double_damage_from.forEach(t => {pokemonWeaknesses.add(t.name);});
+                data.damage_relations.half_damage_from.forEach(t => {pokemonResistances.add(t.name);});
+                data.damage_relations.no_damage_from.forEach(t => {pokemonImmunes.add(t.name);});
             }
+
+        pokemonImmunes.forEach(t => pokemonWeaknesses.delete(t));
+
+        pokemonWeaknesses.forEach(t => weaknessSet.add(t));
+        pokemonResistances.forEach(t => resistanceSet.add(t));
+        pokemonImmunes.forEach(t => immuneSet.add(t));
         }
 
-        const weaknessList = Object.keys(weaknesses);
-        const resistanceList = Object.keys(resistances).filter(type => {return resistances[type] === team.length;});
-        const immuneList = Object.keys(immunes).filter(type => {return immunes[type] === team.length;});
+        const filteredWeaknesses = Array.from(weaknessSet).filter(t => {return !resistanceSet.has(t) && !immuneSet.has(t);});
+        const resistances = Array.from(resistanceSet);
+        const immunities = Array.from(immuneSet);
+
 
         function buildBadgeList(typeArray)
         {
@@ -77,15 +88,15 @@ async function displayWeaknessChart()
             <div class="chartColumns">
                 <div class="chartColumn">
                     <p class="chartLabel weakLabel">Weak To</p>
-                    <div class="chartBadges">${buildBadgeList(weaknessList)}</div>
+                    <div class="chartBadges">${buildBadgeList(filteredWeaknesses)}</div>
                 </div>
                 <div class="chartColumn">
                     <p class="chartLabel resistLabel">Resists</p>
-                    <div class="chartBadges">${buildBadgeList(resistanceList)}</div>
+                    <div class="chartBadges">${buildBadgeList(resistances)}</div>
                 </div>
                 <div class="chartColumn">
                     <p class="chartLabel immuneLabel">Immune To</p>
-                    <div class="chartBadges">${buildBadgeList(immuneList)}</div>
+                    <div class="chartBadges">${buildBadgeList(immunities)}</div>
                 </div>
             </div>
         </div>
