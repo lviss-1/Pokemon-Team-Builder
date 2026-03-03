@@ -305,6 +305,33 @@ button:active {
     font-size: 1.5rem;
 }
 
+.chartColumns {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.chartColumn {
+    flex: 1;
+    min-width: 150px;
+    background-color: #c8dff0;
+    border: 2px solid #6a8ac8;
+    border-radius: 6px;
+    padding: 10px;
+}
+
+.chartLabel {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.65rem;
+    color: #1a1f3a;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.weakLabel { color: #e63946; }
+.resistLabel { color: #2a7a2a; }
+.immuneLabel { color: #2a3a6e; }
+
 .type-fire     { background-color: #F08030; }
 .type-water    { background-color: #6890F0; }
 .type-grass    { background-color: #78C850; }

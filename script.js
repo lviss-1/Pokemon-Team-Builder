@@ -39,9 +39,9 @@ async function displayWeaknessChart()
 
     weaknessChart.innerHTML = `<p class="message">Loading type data...</p>`;
 
-    const weaknesses = new Set();
-    const resistances = new Set();
-    const immunes = new Set();
+    const weaknesses = {};
+    const resistances = {};
+    const immunes = {};
 
     try
     {
@@ -65,15 +65,15 @@ async function displayWeaknessChart()
         function buildBadgeList(typeArray)
         {
             if (typeArray.length === 0)
-            {
-                return `<p class="emptyMessage">None</p>`;
-            }
+                {
+                    return `<p class="emptyMessage">None</p>`;
+                }
             return typeArray.map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
         }
 
         weaknessChart.innerHTML = `
         <div class="chartPanel">
-            <h3 class="chartTitle">Type Coverage</h3>
+            <h3 class="chartTitle">Team Type Coverage</h3>
             <div class="chartColumns">
                 <div class="chartColumn">
                     <p class="chartLabel weakLabel">Weak To</p>

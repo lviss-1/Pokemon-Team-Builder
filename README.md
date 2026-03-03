@@ -53,3 +53,4 @@ This is a web app that lets you search for Pokemon and build a team of 6. It is 
 
 ## Live Demo
 
+👉 https://lviss-1.github.io/Pokemon-Team-Builder
