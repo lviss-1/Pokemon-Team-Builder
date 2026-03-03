@@ -40,6 +40,8 @@ async function displayWeaknessChart()
     weaknessChart.innerHTML = `<p class="message">Loading type data...</p>`;
 
     const weaknesses = new Set();
+    const resistances = new Set();
+    const immunes = new Set();
 
     try
     {
@@ -49,17 +51,42 @@ async function displayWeaknessChart()
             {
                 const response = await fetch(`https://pokeapi.co/api/v2/type/${type}`);
                 const data = await response.json();
-                data.damage_relations.double_damage_from.forEach(t => {weaknesses.add(t.name);});
+
+                data.damage_relations.double_damage_from.forEach(t => {weaknesses[t.name] = (weaknesses[t.name] || 0) + 1;});
+                data.damage_relations.half_damage_from.forEach(t => {resistances[t.name] = (resistances[t.name] || 0) + 1;});
+                data.damage_relations.no_damage_from.forEach(t => {immunes[t.name] = (immunes[t.name] || 0) + 1;});
             }
         }
 
-        const weaknessList = Array.from(weaknesses);
+        const weaknessList = Object.keys(weaknesses);
+        const resistanceList = Object.keys(resistances).filter(type => {return resistances[type] === team.length;});
+        const immuneList = Object.keys(immunes).filter(type => {return immunes[type] === team.length;});
+
+        function buildBadgeList(typeArray)
+        {
+            if (typeArray.length === 0)
+            {
+                return `<p class="emptyMessage">None</p>`;
+            }
+            return typeArray.map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
+        }
 
         weaknessChart.innerHTML = `
         <div class="chartPanel">
-            <h3 class="chartTitle">Team Weaknesses</h3>
-            <div class="chartBadges">
-                ${weaknessList.length > 0 ? weaknessList.map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("") : `<p class="emptyMessage">No common weaknesses found!</p>`}
+            <h3 class="chartTitle">Type Coverage</h3>
+            <div class="chartColumns">
+                <div class="chartColumn">
+                    <p class="chartLabel weakLabel">Weak To</p>
+                    <div class="chartBadges">${buildBadgeList(weaknessList)}</div>
+                </div>
+                <div class="chartColumn">
+                    <p class="chartLabel resistLabel">Resists</p>
+                    <div class="chartBadges">${buildBadgeList(resistanceList)}</div>
+                </div>
+                <div class="chartColumn">
+                    <p class="chartLabel immuneLabel">Immune To</p>
+                    <div class="chartBadges">${buildBadgeList(immuneList)}</div>
+                </div>
             </div>
         </div>
         `;
