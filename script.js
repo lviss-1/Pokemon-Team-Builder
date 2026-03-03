@@ -107,6 +107,13 @@ async function displayWeaknessChart()
     }
 }
 
+function statColor(value)
+{
+    if (value >= 90) return "#48c048";
+    if (value >= 60) return "#f8d030";
+    return "#e63946";
+}
+
 function displayTeam()
 {
     if (team.length === 0)
@@ -127,7 +134,7 @@ function displayTeam()
             <div class="statRow">
                 <span class="statLabel">${s.name}</span>
                 <div class="statBarBg">
-                    <div class="statBarFill" style="width: ${Math.min(s.value / 255 * 100, 100)}%"></div>
+                    <div class="statBarFill" style="width: ${Math.min(s.value / 255 * 100, 100)}%; background-color: ${statColor(s.value)}"></div>
                 </div>
                 <span class="statValue">${s.value}</span>
             </div>
@@ -220,7 +227,7 @@ async function searchPokemon()
         <div class="statRow">
             <span class="statLabel">${s.name}</span>
             <div class="statBarBg">
-                <div class="statBarFill" style="width: ${Math.min(s.value / 255 * 100, 100)}%"></div>
+                <div class="statBarFill" style="width: ${Math.min(s.value / 255 * 100, 100)}%; background-color: ${statColor(s.value)}"></div>
             </div>
             <span class="statValue">${s.value}</span>
         </div>
@@ -278,7 +285,7 @@ async function randomPokemon()
             <div class="statRow">
                 <span class="statLabel">${s.name}</span>
                 <div class="statBarBg">
-                    <div class="statBarFill" style="width: ${Math.min(s.value / 255 * 100, 100)}%"></div>
+                    <div class="statBarFill" style="width: ${Math.min(s.value / 255 * 100, 100)}%; background-color: ${statColor(s.value)}"></div>
                 </div>
                 <span class="statValue">${s.value}</span>
             </div>
