@@ -4,6 +4,7 @@ const weaknessChart = document.getElementById("weaknessChart");
 const pokemonInput = document.getElementById("pokemonInput");
 const pokemonDisplay = document.getElementById("pokemonDisplay");
 const teamContainer = document.getElementById("teamContainer");
+const exportBtn = document.getElementById("exportBtn");
 
 let team = JSON.parse(localStorage.getItem("pokemonTeam")) || [];
 let currentPokemon = null;
@@ -27,6 +28,22 @@ function showMessage(message, isError = false)
 function capitalize(str)
 {
     return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function generateShowdownText(team)
+{
+    return team.map(pokemon => {
+        const nameLine = capitalize(pokemon.name);
+        const abilityLine = (pokemon.abilities && pokemon.abilities.length > 0) ? `Ability: ${capitalize(pokemon.abilities[0])}` : null;
+
+        const statLines = (pokemon.stats || []).map(s => {
+            if(s.value === undefined || s.value === null) return null;
+            return `- ${capitalize(s.name)}: ${s.value}`;
+        }).filter(line => line !== null);
+        
+        const lines = [nameLine, abilityLine, ...statLines].filter(line => line !== null);
+        return lines.join("\n");
+    }).join("\n\n");
 }
 
 async function displayWeaknessChart()
@@ -312,6 +329,26 @@ async function randomPokemon()
     }
 }
 
+exportBtn.addEventListener("click", () => {
+    if(team.length === 0)
+    {
+        showMessage("Your team is empty! Add some Pokémon before exporting.", true);
+        return;
+    }
+
+    const showdownText = generateShowdownText(team);
+
+    navigator.clipboard.writeText(showdownText).then(() => {
+        exportBtn.textContent = "Copied!";
+        exportBtn.classList.add("copied");
+        setTimeout(() => {
+            exportBtn.textContent = "Export To Pokemon Showdown";
+            exportBtn.classList.remove("copied");
+        }, 2000);
+    }).catch(() => {
+        showMessage("Failed to copy to clipboard. Please try again.", true);
+    });
+});
 searchBtn.addEventListener("click", searchPokemon);
 randomBtn.addEventListener("click", randomPokemon);
 
