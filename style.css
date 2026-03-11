@@ -98,6 +98,24 @@ button:active {
     background-color: #38a038;
 }
 
+.exportBtn {
+    display: block;
+    margin: 0 auto 16px auto;
+    background-color: #2a3a6e;
+    color: #f0f4ff;
+    border: 3px solid #f8d030;
+}
+
+.exportBtn:hover {
+    background-color: #1a2a5e;
+}
+
+.exportBtn.copied {
+    background-color: #48c048;
+    border-color: #48c048;
+    color: white;
+}
+
 #pokemonDisplay {
     display: flex;
     justify-content: center;
