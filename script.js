@@ -5,6 +5,8 @@ const pokemonInput = document.getElementById("pokemonInput");
 const pokemonDisplay = document.getElementById("pokemonDisplay");
 const teamContainer = document.getElementById("teamContainer");
 const exportBtn = document.getElementById("exportBtn");
+const scanBtn = document.getElementById("scanBtn");
+const threatReport = document.getElementById("threatReport");
 
 let team = JSON.parse(localStorage.getItem("pokemonTeam")) || [];
 let currentPokemon = null;
@@ -19,6 +21,7 @@ function saveTeam()
 function showMessage(message, isError = false)
 {
     const msg = document.createElement("p");
+
     msg.textContent = message;
     msg.className = isError ? "message error" : "message success";
     pokemonDisplay.prepend(msg);
@@ -44,6 +47,32 @@ function generateShowdownText(team)
         const lines = [nameLine, abilityLine, ...statLines].filter(line => line !== null);
         return lines.join("\n");
     }).join("\n\n");
+}
+
+function checkTeamVulnerabilities(team, threats)
+{
+    const results = [];
+    
+    for(const threat of threats)
+    {
+        let hasCounter = false;
+
+        for(const pokemon of team)
+        {
+            for(const pokemonType of pokemon.types)
+            {
+                if(threat.counters.includes(pokemonType)) hasCounter = true;
+            }
+        }
+
+        results.push({
+            name: threat.name,
+            threatReason: threat.threatReason,
+            covered: hasCounter
+        });
+    }
+
+    return results;
 }
 
 async function displayWeaknessChart()
@@ -349,6 +378,33 @@ exportBtn.addEventListener("click", () => {
         showMessage("Failed to copy to clipboard. Please try again.", true);
     });
 });
+scanBtn.addEventListener("click", () => {
+    if(team.length === 0)
+    {
+        console.warn("Scan cannot be completed with empty team. Please add a Pokemon and try again.");
+        threatReport.innerHTML = `<p class="emptyMessage">Your team is empty! Add some Pokémon to scan for threats.</p>`;
+        return;
+    }
+
+    threatReport.innerHTML = "";
+
+    const results = checkTeamVulnerabilities(team, TOP_THREATS);
+
+    for(const result of results)
+    {
+        const card = document.createElement("div");
+        card.className = result.covered ? "threatCard covered" : "threatCard uncovered";
+
+        const typeBadges = result.types.map(t => `<span class="typeBadge type-${t}">$capitalize(t)}</span>`).join("");
+        const statusText = results.covered ? "Covered" : "No Counter";
+
+        card.innerHTML = `
+            <p class="threatName">${result.name}</p>
+            <div class="type-container">${typeBadges}</div>
+            <p class="threatReason">${result.threatReason}</p>
+            <p class="statusText ${result.covered ? "coveredText" : "uncoveredText"}">${statusText}</p>`
+    }
+})
 searchBtn.addEventListener("click", searchPokemon);
 randomBtn.addEventListener("click", randomPokemon);
 
