@@ -1,6 +1,6 @@
 const TOP_THREATS = [
     {
-        name: "Goldengo",
+        name: "gholdengo",
         types: ["steel", "ghost"],
         threatReason: "Powerful special attacker with Good as Gold ability blocking status conditions and providing a strong offensive presence.",
         counters: ["ghost", "dark", "fire", "ground"]
@@ -24,13 +24,13 @@ const TOP_THREATS = [
         counters: ["fire", "ice", "poison", "flying", "bug"]
     },
     {
-        name: "Urshifu",
+        name: "urshifu-rapid-strike",
         types: ["water", "dark"],
         threatReason: "Unstoppable Surging Strikes bypasses protect and lands critical hits",
         counters: ["fairy", "electric", "grass", "fighting"]
     },
     {
-        name: "Flutter Mane",
+        name: "flutter-mane",
         types: ["ghost", "fairy"],
         threatReason: "Extremely fast special attacker with huge Special Attack and Speed",
         counters: ["ghost", "steel", "poison"]
@@ -42,7 +42,7 @@ const TOP_THREATS = [
         counters: ["ghost", "dark"]
     },
     {
-        name: "Landorus-T",
+        name: "landorus-therian",
         types: ["ground", "flying"],
         threatReason: "Versatile pivot with Intimidate, strong coverage, and U-turn",
         counters: ["water", "ice", "grass"]

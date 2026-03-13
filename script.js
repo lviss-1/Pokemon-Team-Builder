@@ -49,7 +49,7 @@ function generateShowdownText(team)
     }).join("\n\n");
 }
 
-function checkTeamVulnerabilities(team, threats)
+async function checkTeamVulnerabilities(team, threats)
 {
     const results = [];
     
@@ -65,11 +65,26 @@ function checkTeamVulnerabilities(team, threats)
             }
         }
 
+        let spriteUrl = null;
+
+        try
+        {
+            const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${threat.name.toLowerCase()}`);
+            const data = await response.json();
+
+            spriteUrl = data.sprites.front_default;
+        }
+        catch(error)
+        {
+            console.warn(`Could not fetch sprite for ${threat.name}`);
+        }
+
         results.push({
             name: threat.name,
             threatReason: threat.threatReason,
             types: threat.types,
-            covered: hasCounter
+            covered: hasCounter,
+            sprite: spriteUrl
         });
     }
 
@@ -379,7 +394,7 @@ exportBtn.addEventListener("click", () => {
         showMessage("Failed to copy to clipboard. Please try again.", true);
     });
 });
-scanBtn.addEventListener("click", () => {
+scanBtn.addEventListener("click", async () => {
     if(team.length === 0)
     {
         console.warn("Scan cannot be completed with empty team. Please add a Pokemon and try again.");
@@ -387,9 +402,11 @@ scanBtn.addEventListener("click", () => {
         return;
     }
 
-    threatReport.innerHTML = "";
+    threatReport.innerHTML = `<p class=message">Scanning for threats...</p>`;
 
-    const results = checkTeamVulnerabilities(team, TOP_THREATS);
+    const results = await checkTeamVulnerabilities(team, TOP_THREATS);
+
+    threatReport.innerHTML = "";
 
     for(const result of results)
     {
@@ -400,6 +417,7 @@ scanBtn.addEventListener("click", () => {
         const statusText = result.covered ? "Covered" : "No Counter";
 
         card.innerHTML = `
+            ${result.sprite ? `<img src="${result.sprite}" alt="${result.name}" class="threatSprite"/>` : ""}
             <p class="threatName">${result.name}</p>
             <div class="type-container">${typeBadges}</div>
             <p class="threatReason">${result.threatReason}</p>
