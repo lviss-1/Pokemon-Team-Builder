@@ -7,9 +7,9 @@ This is a web app that lets you search for Pokemon and build a team of 6. It is 
 * HTML
 * CSS
 * JavaScript
-* PokeAPI (https://pokeapi.co/) A free Pokemon API
+* [PokeAPI](https://pokeapi.co/) - A free Pokemon API
 * [Google Fonts](https://fonts.google.com/) — Press Start 2P and VT323 for the pixel aesthetic
-* [Pokemon Showdown](https)
+* [Pokemon Showdown](https://pokemonshowdown.com/) - Export format
  
 ## Features:
 
@@ -40,6 +40,10 @@ This is a web app that lets you search for Pokemon and build a team of 6. It is 
 * How to save and load data with localStorage
 * DOM manipulation with JavaScript
 * The debugging of cross-file errors between HTML, JavaScript, and CSS
+* CSS Flexbox for layouts
+* CSS transitions and animations for stat bars
+* Caching API responses to reduce redundant network requests
+* Using the navigator clipboard API for copy to clipboard funcionality
 * How to use data attributes to pass information to event listeners
 * Working with JavaScript Sets to avoid duplicate entries
 
@@ -47,15 +51,15 @@ This is a web app that lets you search for Pokemon and build a team of 6. It is 
 
 * Pokedex description for each Pokemon?
 * Use the type weakness chart to recommend types of Pokemon that may synergize with the team?
-* Creating an ability to share or export the team the user made in the web app?
-* Have the stat bars change color depending on the stat amount (eg. low amount of stat - red, medium amount of stat - orange, high amount of stat - green)
+* Give user the ability to configure a Pokemons move set, ability, nature, or held item to add more build variety to export to showdown?
+* Allow user the ability to scroll through the Pokedex to find a certain Pokemon they do not know the name/Pokedex num of
 
 **What Changed From the Last Version:
-- Added the generation 4 styling to the web app
-- Added the previous planned features - random button, stats, abilities, weakness chart
-- Added Google Fonts to further customize and add to the "pixelated" aesthetic
-- Further deepened my knowledge on JavaScript coding by getting real experience with APIs, slight mobile responsiveness, and keeping different files (HTML, CSS, and JavaScript) organized and functioning all together
-- Kept the planned features option for future implementations
+- Added a type-coverage chart that actually reflects the type weaknesses, immunities, and resistances of a team rather than just stacking all of the Pokemons weaknesses into a list
+- Added the export Pokemon to Pokemon Showdown
+- Added color coded stat bars to feature whether a Pokemon is strong/weak in certain stats
+- Expanded what I learned with caching, and clipboard API
+- Added different planned/wanted features
 
 ## Live Demo
 
