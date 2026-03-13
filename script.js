@@ -68,6 +68,7 @@ function checkTeamVulnerabilities(team, threats)
         results.push({
             name: threat.name,
             threatReason: threat.threatReason,
+            types: threat.types,
             covered: hasCounter
         });
     }
@@ -393,18 +394,19 @@ scanBtn.addEventListener("click", () => {
     for(const result of results)
     {
         const card = document.createElement("div");
-        card.className = result.covered ? "threatCard covered" : "threatCard uncovered";
+        card.className = result.covered ? "threatCard covered" : "threatCard danger";
 
-        const typeBadges = result.types.map(t => `<span class="typeBadge type-${t}">$capitalize(t)}</span>`).join("");
-        const statusText = results.covered ? "Covered" : "No Counter";
+        const typeBadges = result.types.map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
+        const statusText = result.covered ? "Covered" : "No Counter";
 
         card.innerHTML = `
             <p class="threatName">${result.name}</p>
             <div class="type-container">${typeBadges}</div>
             <p class="threatReason">${result.threatReason}</p>
-            <p class="statusText ${result.covered ? "coveredText" : "uncoveredText"}">${statusText}</p>`
+            <p class="statusText ${result.covered ? "coveredText" : "uncoveredText"}">${statusText}</p>`;
+        threatReport.appendChild(card);
     }
-})
+});
 searchBtn.addEventListener("click", searchPokemon);
 randomBtn.addEventListener("click", randomPokemon);
 
