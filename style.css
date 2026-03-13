@@ -350,6 +350,81 @@ button:active {
 .resistLabel { color: #2a7a2a; }
 .immuneLabel { color: #2a3a6e; }
 
+.threatSection {
+    margin-top: 24px;
+}
+
+.scanBtn {
+    display: block;
+    margin: 0 auto 16px auto;
+    background-color: #2a3a6e;
+    color: #f0f4ff;
+    border: 3px solid #f8d030;
+}
+
+.scanBtn:hover {
+    background-color: #1a2a5e;
+}
+
+#threatReport {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.threatCard {
+    background-color: #dce8f5;
+    border-radius: 8px;
+    box-shadow: 4px 4px 0 #8aaad0;
+    padding: 16px;
+    width: 250px;
+    text-align: center;
+}
+
+.threatCard.danger {
+    border: 3px solid #e63946;
+}
+
+.threatCard.covered {
+    border: 3px solid #2a7a2a;
+}
+
+.threatName {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.55rem;
+    color: #1a1f3a;
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+.threatReason {
+    font-family: 'VT323', monospace;
+    font-size: 0.9rem;
+    color: #2a3a6e;
+    margin-bottom: 8px;
+}
+
+.threatStatus {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.55rem;
+    margin-top: 8px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.threatStatus.danger {
+    background-color: #f0d4d4;
+    color: #e63946;
+}
+
+.threatStatus.covered {
+    background-color: #d4f0d4;
+    color: #1a6a1a;
+}
+
 .type-fire     { background-color: #F08030; }
 .type-water    { background-color: #6890F0; }
 .type-grass    { background-color: #78C850; }
