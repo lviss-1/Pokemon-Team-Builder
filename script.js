@@ -133,6 +133,83 @@ async function loadPokedexData()
     }
 }
 
+function renderTable(data)
+{
+    const tBody = document.createElement("tr");
+    tBody.innerHTML = "";
+
+    if(data.length === 0)
+    {
+        const emptyRow = document.createElement("tr");
+        const emptyCell = document.createElement("td");
+
+        emptyCell.colSpan = 11;
+        emptyCell.textContent = "No Pokemon found";
+        emptyCell.style.textAlign = "center";
+        emptyCell.style.padding = "20px";
+
+        emptyRow = appendChild(emptyCell);
+        tBody.appendChild(emptyRow);
+        return;
+    }
+
+    data.forEach(pokemon => {
+        const row = document.createElement("tr");
+        const idCell = document.createElement("td");
+        idCell.className = "pokedexId";
+        idCell.textContent = `#${String(pokemon.id).padStart(3, "0")}`;
+        row.appendChild(idCell);
+
+        const spriteCell = document.createElement("td");
+        const sprite = document.createElement("img");
+        sprite.src = pokemon.image;
+        sprite.alt = pokemon.name;
+        sprite.className = "pokedexSprite";
+        spriteCell.appendChild(sprite);
+        row.appendChild(spriteCell);
+
+        const nameCell = document.createElement("td");
+        nameCell.className = "pokedexName";
+        nameCell.textContent = capitalize(pokemon.name);
+        row.appendChild(nameCell);
+
+        const typeCell = document.createElement("td");
+        pokemon.types.forEach(t => {
+            const badge = document.createElement("span");
+            badge.className = `typeBadge type-${t}`;
+            badge.textContent = capitalize(t);
+            typeCell.appendChild(badge);
+        });
+
+        row.appendChild(typeCell);
+
+        [pokemon.hp, pokemon.attack, pokemon.defense, pokemon.specialAttack, pokemon.specialDefense, pokemon.speed].forEach(stat => {
+            const statCell = document.createElement("td");
+            statCell.textContent = stat;
+            row.appendChild(statCell);
+        });
+
+        const addCell = document.createElement("td");
+        const addBtn = document.createElement("button");
+        const isOnTeam = team.some(p => p.name === pokemon.name);
+        addBtn.className = "pokedexAddBtn";
+        addBtn.textContent = isOnTeam ? "Added" : "Add";
+        addBtn.disabled = isOnTeam;
+
+        addBtn.addEventListener("click", () => {
+            currentPokemon = pokemon;
+            addToTeam();
+            renderTable(filteredData);
+        });
+
+        addCell.appendChild(addBtn);
+        row.appendChild(addCell);
+        tBody.appendChild(row);
+    });
+
+    document.getElementById("pokedexStatus").textContent = `Showing ${data.length} of ${pokedexData.length} Pokémon`;
+}
+
 async function displayWeaknessChart()
 {
     if (team.length === 0)
