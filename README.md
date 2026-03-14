@@ -31,9 +31,9 @@ This is a web app that lets you search for Pokemon and build a team of 6. It is 
 2. View their stats, abilities, and types on the search card
 3. Click "Add to Team" to start building your team
 4. Check the type-coverage chart at the bottom to see your team's net weaknesses, immunities, and resistances
-5. Click the "
-5. Click "Export to Showdown" to copy your team to the clipboard and practice using it in real battles
-5. Click "Remove" on any Pokemon card to remove them from your team
+5. Click the "Scan for Meta Threats" button to see what the current best competitive Pokemon are and adjust your team to cover those weaknesses
+6. Click "Export to Showdown" to copy your team to the clipboard and practice using it in real battles
+7. Click "Remove" on any Pokemon card to remove them from your team
 
 ## What I learned:
 
@@ -61,6 +61,7 @@ This is a web app that lets you search for Pokemon and build a team of 6. It is 
 - Added color coded stat bars to feature whether a Pokemon is strong/weak in certain stats
 - Expanded what I learned with caching, and clipboard API
 - Added different planned/wanted features
+- Added the ability to see the current best Pokemon in the meta with their types, the reason they are strong in the meta, and their sprites
 
 ## Live Demo
 

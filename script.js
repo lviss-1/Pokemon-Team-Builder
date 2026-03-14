@@ -135,7 +135,7 @@ async function loadPokedexData()
 
 function renderTable(data)
 {
-    const tBody = document.createElement("tr");
+    const tBody = document.getElementById("pokedexBody");
     tBody.innerHTML = "";
 
     if(data.length === 0)
