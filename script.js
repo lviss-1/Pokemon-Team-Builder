@@ -10,8 +10,13 @@ const threatReport = document.getElementById("threatReport");
 
 let team = JSON.parse(localStorage.getItem("pokemonTeam")) || [];
 let currentPokemon = null;
+let pokedexData = [];
+let filteredData = [];
+let sortKey = "id";
+let sortDesc = false;
 
 const AMOUNT_OF_POKEMON = 1025;
+const typeCache = {};
 
 function saveTeam()
 {
@@ -89,6 +94,43 @@ async function checkTeamVulnerabilities(team, threats)
     }
 
     return results;
+}
+
+async function loadPokedexData()
+{
+    const pokedexStatus = document.getElementById("pokedexStatus");
+
+    pokedexStatus.textContent = "Loading Pokemon..."
+
+    try
+    {
+        const listResponse = await fetch("https://pokeapi.co/api/v2/pokemon?limit=100&offset=0");
+        const listData = await listResponse.json();
+        const detailPromises = listData.results.map(p => fetch(p.url).then(r => json()));
+        const detailResults = await Promise.all(detailPromises);
+
+        pokedexData = detailResults.map(data => ({
+            id: data.id,
+            name: data.name,
+            types: data.types.map(t => t.type.name),
+            image: data.sprites.front_default,
+            abilities: data.abilities.map(a => a.ability.name.replace("-", " ")),
+            stats: data.stats.map(s => ({ name: s.stat.name, value: s.base_stat })),
+            hp: data.stats[0].base_stat,
+            attack: data.stats[1].base_stat,
+            defense: data.stats[2].base_stat,
+            specialAttack: data.stats[3].base_stat,
+            specialDefense: data.stats[4].base_stat,
+            speed: data.stats[5].base_stat
+        }));
+
+        filteredData = [...pokedexData];
+        pokedexStatus.textContent = `Showing ${pokedexData.length} Pokemon`;
+        renderTable(filteredData);
+    } catch(error) {
+        document.getElementById("pokedexStatus").textContent = "Failed to load Pokedex. Please refresh the page.";
+        console.warn("Pokedex load error: ", error);
+    }
 }
 
 async function displayWeaknessChart()
