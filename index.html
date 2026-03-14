@@ -36,6 +36,32 @@
                 <button id="scanBtn" class="scanBtn">Scan for Meta Threats</button>
                 <div id="threatReport"></div>
             </section>
+
+            <section class="pokedexSection">
+                <h2 class="section-title">Pokedex</h2>
+                <input type="text" id="pokedexSearch" placeholder="Search Pokemon..." autocomplete="off" class="pokedexSearchInput"/>
+                <div class="tableWrapper">
+                    <table id="pokedexTable">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-key="id">#</th>
+                                <th>Sprite</th>
+                                <th class="sortable" data-key="name">Name</th>
+                                <th>Type</th>
+                                <th class="sortable" data-key="hp">HP</th>
+                                <th class="sortable" data-key="attack">ATK</th>
+                                <th class="sortable" data-key="defense">DEF</th>
+                                <th class="sortable" data-key="specialAttack">SpA</th>
+                                <th class="sortable" data-key="specialDefense">SpD</th>
+                                <th class="sortable" data-key="speed">SPD</th>
+                                <th>Add</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pokedexBody"></tbody>
+                    </table>
+                </div>
+                <p id="pokedexStatus" class="pokedexStatus">Loading Pokedex...</p>
+            </section>
         </main>
 
         <script src="metaData.js"></script>
