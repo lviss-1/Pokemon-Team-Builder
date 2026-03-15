@@ -99,34 +99,51 @@ async function checkTeamVulnerabilities(team, threats)
 async function loadPokedexData()
 {
     const pokedexStatus = document.getElementById("pokedexStatus");
-
     pokedexStatus.textContent = "Loading Pokemon..."
 
     try
     {
-        const listResponse = await fetch("https://pokeapi.co/api/v2/pokemon?limit=100&offset=0");
+        const listResponse = await fetch("https://pokeapi.co/api/v2/pokemon?limit=1025&offset=0");
         const listData = await listResponse.json();
-        const detailPromises = listData.results.map(p => fetch(p.url).then(r => json()));
-        const detailResults = await Promise.all(detailPromises);
+        const batchSize = 250;
+        pokedexData = [];
 
-        pokedexData = detailResults.map(data => ({
-            id: data.id,
-            name: data.name,
-            types: data.types.map(t => t.type.name),
-            image: data.sprites.front_default,
-            abilities: data.abilities.map(a => a.ability.name.replace("-", " ")),
-            stats: data.stats.map(s => ({ name: s.stat.name, value: s.base_stat })),
-            hp: data.stats[0].base_stat,
-            attack: data.stats[1].base_stat,
-            defense: data.stats[2].base_stat,
-            specialAttack: data.stats[3].base_stat,
-            specialDefense: data.stats[4].base_stat,
-            speed: data.stats[5].base_stat
-        }));
+        for(let i = 0; i < listData.results.length; i += batchSize)
+        {
+            const batch = listData.results.slice(i, i + batchSize);
+            const detailPromises = batch.map(p => fetch(p.url).then(r => r.json()));
+            const detailResults = await Promise.all(detailPromises);
 
-        filteredData = [...pokedexData];
+            detailResults.forEach(data => {
+                pokedexData.push({
+                    id: data.id,
+                    name: data.name,
+                    types: data.types.map(t => t.type.name),
+                    image: data.sprites.front_default,
+                    abilities: data.abilities.map(a => a.ability.name.replace("-", " ")),
+                    stats: data.stats.map(s => ({ name: s.stat.name, value: s.base_stat })),
+                    hp: data.stats[0].base_stat,
+                    attack: data.stats[1].base_stat,
+                    defense: data.stats[2].base_stat,
+                    specialAttack: data.stats[3].base_stat,
+                    specialDefense: data.stats[4].base_stat,
+                    speed: data.stats[5].base_stat
+                });
+            });
+
+            pokedexStatus.textContent = `Loading... ${pokedexData.length} of ${listData.results.length} Pokemon`;
+            
+            filteredData = [...pokedexData];
+            renderTable(filteredData);
+        }
+
         pokedexStatus.textContent = `Showing ${pokedexData.length} Pokemon`;
-        renderTable(filteredData);
+
+        document.getElementById("pokedexSearch").addEventListener("input", (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            filteredData = pokedexData.filter(p => p.name.includes(query));
+            renderTable(filteredData);
+        });
     } catch(error) {
         document.getElementById("pokedexStatus").textContent = "Failed to load Pokedex. Please refresh the page.";
         console.warn("Pokedex load error: ", error);
@@ -208,6 +225,43 @@ function renderTable(data)
     });
 
     document.getElementById("pokedexStatus").textContent = `Showing ${data.length} of ${pokedexData.length} Pokémon`;
+}
+
+function sortData(key)
+{
+    if(sortKey === key)
+    {
+        sortDesc = !sortDesc;
+    }
+    else
+    {
+        sortKey = key;
+        sortDesc = false;
+    }
+
+    filteredData.sort((a, b) => {
+        if(typeof a[key] === "string")
+        {
+            return sortdesc ? b[key].localeCompare(a[key]) : a[key].localeCompare(b[key]);
+        }
+        return sortDesc ? b[key] - a[key] : a[key] - b[key];
+    });
+
+    document.querySelectorAll("#pokedexTable th.sortable").forEach(th => {
+        th.classList.remove("sorted", "desc");
+    });
+
+    const activeHeader = document.querySelector(`#pokedexTable th[data-key="${key}"]`);
+    if(activeHeader)
+    {
+        activeHeader.classList.add("sorted");
+        if(sortDesc)
+        {
+            activeHeader.classList.add("desc");
+        }
+    }
+
+    renderTable(filteredData);
 }
 
 async function displayWeaknessChart()
@@ -527,26 +581,51 @@ scanBtn.addEventListener("click", async () => {
 
     threatReport.innerHTML = "";
 
-    for(const result of results)
-    {
+    results.forEach(result => {
         const card = document.createElement("div");
         card.className = result.covered ? "threatCard covered" : "threatCard danger";
 
-        const typeBadges = result.types.map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
-        const statusText = result.covered ? "Covered" : "No Counter";
+        if (result.sprite) {
+            const img = document.createElement("img");
+            img.src       = result.sprite;
+            img.alt       = result.name;
+            img.className = "threatSprite";
+            card.appendChild(img);
+        }
 
-        card.innerHTML = `
-            ${result.sprite ? `<img src="${result.sprite}" alt="${result.name}" class="threatSprite"/>` : ""}
-            <p class="threatName">${result.name}</p>
-            <div class="type-container">${typeBadges}</div>
-            <p class="threatReason">${result.threatReason}</p>
-            <p class="statusText ${result.covered ? "coveredText" : "uncoveredText"}">${statusText}</p>`;
+        const nameEl = document.createElement("p");
+        nameEl.className   = "threatName";
+        nameEl.textContent = capitalize(result.name);
+        card.appendChild(nameEl);
+
+        const typeContainer = document.createElement("div");
+        typeContainer.className = "type-container";
+        result.types.forEach(t => {
+            const badge = document.createElement("span");
+            badge.className   = `typeBadge type-${t}`;
+            badge.textContent = capitalize(t);
+            typeContainer.appendChild(badge);
+        });
+        card.appendChild(typeContainer);
+
+        const reasonEl = document.createElement("p");
+        reasonEl.className   = "threatReason";
+        reasonEl.textContent = result.threatReason;
+        card.appendChild(reasonEl);
+
+        const statusEl = document.createElement("span");
+        statusEl.className   = `threatStatus ${result.covered ? "covered" : "danger"}`;
+        statusEl.textContent = result.covered ? "Covered" : "No Counter";
+        card.appendChild(statusEl);
+
         threatReport.appendChild(card);
-    }
+    });
+});
+document.querySelectorAll("#pokedexTable th.sortable").forEach(th => {
+    th.addEventListener("click", () => sortData(th.dataset.key));
 });
 searchBtn.addEventListener("click", searchPokemon);
 randomBtn.addEventListener("click", randomPokemon);
-
 pokemonInput.addEventListener("keydown", (e) => {
     if(e.key === "Enter") 
     {
@@ -555,3 +634,4 @@ pokemonInput.addEventListener("keydown", (e) => {
 });
 
 displayTeam();
+loadPokedexData();
