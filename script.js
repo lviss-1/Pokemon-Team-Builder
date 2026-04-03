@@ -1,3 +1,5 @@
+const pokeAPI = "https://pokeapi.co/api/v2";
+
 const searchBtn = document.getElementById("searchBtn");
 const randomBtn = document.getElementById("randomBtn");
 const weaknessChart = document.getElementById("weaknessChart");
@@ -74,7 +76,7 @@ async function checkTeamVulnerabilities(team, threats)
 
         try
         {
-            const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${threat.name.toLowerCase()}`);
+            const response = await fetch(`${pokeAPI}/pokemon/${threat.name.toLowerCase()}`);
             const data = await response.json();
 
             spriteUrl = data.sprites.front_default;
@@ -103,7 +105,7 @@ async function loadPokedexData()
 
     try
     {
-        const listResponse = await fetch("https://pokeapi.co/api/v2/pokemon?limit=1025&offset=0");
+        const listResponse = await fetch(`${pokeAPI}/pokemon?limit=1025&offset=0`);
         const listData = await listResponse.json();
         const batchSize = 250;
         pokedexData = [];
@@ -288,7 +290,7 @@ async function displayWeaknessChart()
 
             for (const type of pokemon.types)
             {
-                const response = await fetch(`https://pokeapi.co/api/v2/type/${type}`);
+                const response = await fetch(`${pokeAPI}/type/${type}`);
                 const data = await response.json();
 
                 data.damage_relations.double_damage_from.forEach(t => {pokemonWeaknesses.add(t.name);});
@@ -443,7 +445,7 @@ async function searchPokemon()
 
     try
     {
-        const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemonName}`);
+        const response = await fetch(`${pokeAPI}/pokemon/${pokemonName}`);
         if (!response.ok) throw new Error("Not found");
         const data = await response.json();
 
@@ -497,7 +499,7 @@ async function randomPokemon()
     pokemonInput.value = "";
     pokemonDisplay.innerHTML = `<p class="message">Getting a random Pokémon...</p>`;
     try {
-        const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${randomId}`);
+        const response = await fetch(`${pokeAPI}/pokemon/${randomId}`);
         if (!response.ok) throw new Error("Not found");
         const data = await response.json();
 
