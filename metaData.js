@@ -1,50 +1,50 @@
 const TOP_THREATS = [
     {
+        name: "great-tusk",
+        types: ["ground", "fighting"],
+        threatReason: "Premier hazard remover with Rapid Spin that boosts Speed; dominant physical attacker with strong offensive and defensive presence.",
+        counters: ["water", "ice", "psychic", "flying", "fairy"]
+    },
+    {
+        name: "kingambit",
+        types: ["dark", "steel"],
+        threatReason: "Dominant physical attacker that gets stronger as allies faint with Supreme Overlord ability.",
+        counters: ["fighting", "fire", "ground"]
+    },
+    {
         name: "gholdengo",
         types: ["steel", "ghost"],
         threatReason: "Powerful special attacker with Good as Gold ability blocking status conditions and providing a strong offensive presence.",
         counters: ["ghost", "dark", "fire", "ground"]
     },
     {
-        name: "Kingambit",
-        types: ["dark", "steel"],
-        threatReason: "Dominant physical attacker that gets stronger as allies faint",
-        counters: ["fighting", "fire", "ground"]
+        name: "dragonite",
+        types: ["dragon", "flying"],
+        threatReason: "Powerful mixed attacker with Multiscale reducing first-hit damage; Extreme Speed priority makes it difficult to revenge kill.",
+        counters: ["ice", "fairy", "rock"]
     },
     {
-        name: "Incineroar",
-        types: ["fire", "dark"],
-        threatReason: "Top support Pokémon with Intimidate, Fake Out, and utility moves",
-        counters: ["water", "fighting", "rock", "ground"]
+        name: "zamazenta",
+        types: ["fighting"],
+        threatReason: "Extremely bulky defensive powerhouse with massive Defense and high Speed; shuts down physical attackers with Dauntless Shield.",
+        counters: ["psychic", "flying", "fairy"]
     },
     {
-        name: "Rillaboom",
-        types: ["grass"],
-        threatReason: "Powerful Grassy Surge setter with strong priority Wood Hammer",
-        counters: ["fire", "ice", "poison", "flying", "bug"]
+        name: "ogerpon-wellspring-mask",
+        types: ["grass", "water"],
+        threatReason: "Terastallizes into Water type with Water Absorb immunity; Ivy Cudgel bypasses conventional checks and provides strong offensive pressure.",
+        counters: ["flying", "poison", "electric", "bug"]
     },
     {
-        name: "urshifu-rapid-strike",
-        types: ["water", "dark"],
-        threatReason: "Unstoppable Surging Strikes bypasses protect and lands critical hits",
-        counters: ["fairy", "electric", "grass", "fighting"]
+        name: "iron-valiant",
+        types: ["fairy", "fighting"],
+        threatReason: "Extremely fast and powerful mixed attacker with wide coverage; Quark Drive boosts stats in Electric Terrain.",
+        counters: ["poison", "steel", "psychic", "flying"]
     },
     {
-        name: "flutter-mane",
-        types: ["ghost", "fairy"],
-        threatReason: "Extremely fast special attacker with huge Special Attack and Speed",
-        counters: ["ghost", "steel", "poison"]
-    },
-    {
-        name: "Calyrex-Shadow",
-        types: ["psychic", "ghost"],
-        threatReason: "Fastest Pokémon in the game with massive Special Attack",
-        counters: ["ghost", "dark"]
-    },
-    {
-        name: "landorus-therian",
-        types: ["ground", "flying"],
-        threatReason: "Versatile pivot with Intimidate, strong coverage, and U-turn",
-        counters: ["water", "ice", "grass"]
+        name: "raging-bolt",
+        types: ["electric", "dragon"],
+        threatReason: "Powerful special attacker with Thunderclap priority move; Protosynthesis boosts stats in harsh sun for devastating wallbreaking.",
+        counters: ["ground", "ice", "fairy"]
     }
 ];
