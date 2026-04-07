@@ -1,97 +1,100 @@
 # Pokemon Team Builder
 
-This is a web app that lets you search for Pokemon and build a team of 6. It is built with vanilla JavaScript with the intention of practicing/learning working with APIs and front-end development.
+I've been a Pokemon fan since I was a kid. Gen 5 is what got me started, but Gen 4 — specifically Platinum — is what turned me into the Pokemon lover I am today. Something about the artwork and aesthetic of that era just hit different, and it's never really left me.
+
+This project started because I wanted to plan out a team for a Renegade Platinum run (a difficulty romhack of Platinum, highly recommend). I was trying to figure out what my team looked like on paper, how it held up type-wise, and whether it could realistically handle tough fights — and I couldn't find a single place that did all of that cleanly. So I built one.
+
+Along the way it grew into something I actually want competitive players to use. I follow the competitive scene more as a spectator than a player, but I always found myself wondering: *if I built this team, how would it actually hold up against what people are running right now?* The meta threat scanner came from that question — I hadn't seen anything like it anywhere else, and it felt like the kind of tool that would genuinely save time when you're trying out different team compositions.
+
+This was also my first major project I built fully on my own, with the goal of learning how to work with RESTful APIs. The type coverage chart was by far the hardest thing to figure out — pulling and processing type effectiveness data from the API, caching it properly, and making the net weaknesses actually meaningful took a lot of trial and error. I'm proud of how it came out.
+
+The aesthetic was intentional from the start. The Gen 4 games have some of the best visual identity in the series and I wanted this to feel like it lived in that world — the pixel fonts, the DS-style panel borders, the color scheme. If you open this and immediately feel like you're looking at something from that era, that's the goal.
+
+---
 
 ## Live Demo
 
 👉 https://lviss-1.github.io/Pokemon-Team-Builder
- 
-## Features
+
+---
+
+## What It Does
 
 ### Team Builder
-- Search for any Pokemon by name or Pokedex number
-- View their sprite, types, abilities, and base stats with color coded animated stat bars
-- Random Pokemon button that picks randomly from the 1025 available Pokemon
+- Search any Pokemon by name or Pokedex number
+- Random button pulls from all 1025 available Pokemon
+- View sprite, types, abilities, and base stats with color-coded animated stat bars
 - Add up to 6 unique Pokemon to your team
-- Team is saved in localStorage so it stays on the page even after refreshing
+- Team is saved to localStorage so it persists across page refreshes
 
 ### Type Coverage Chart
-- Shows the teams net weaknesses, immunities, and resistances
-- Weaknesses are filtered out if there is a Pokemon on the team that either resists or is immune to said type of weakness
-- Type data is cached to avoid redundant API calls and reduce the loading times of the page
-
-### Exporting to Pokemon Showdown
-- Copies the full team to the clipboard in Pokemon Showdown format after pressing the "Export to Showdown" button
-- The button changes to "Copied" with a green success state for 2 seconds after copying
+- Shows your team's net weaknesses, resistances, and immunities
+- Weaknesses are filtered out if any team member resists or is immune to that type — so you see your *actual* vulnerabilities, not just raw ones
+- Type data is cached to avoid redundant API calls
 
 ### Meta Threat Scanner
-- Scans your current team and compares them agains the top 8 current competitive threats in the Pokemon competitive scene after pressing the "Scan for Meta Threats" button
-- Shows the threats' types, sprites, their reason for being a threat, and whether or not your team covers them or not (whether your team has Pokemon that have strengths against said threats' types)
-- Shows a green border for the threats that are covered and a red border for those that are not
+- Checks your team against the top 8 current competitive threats in the Smogon OU tier
+- Shows each threat's sprite, types, and why they're dangerous in the current meta
+- Green border = your team has coverage. Red border = you're exposed.
+- The fastest way I know to spot holes in a team before you commit to it
+
+### Export to Pokemon Showdown
+- One button copies your full team to clipboard in Showdown format
+- Button turns green and says "Copied!" for 2 seconds so you know it worked
 
 ### Pokedex
-- Searchable and sortable table of all 1025 Pokemon
-- Loads Pokemon in batches of 250 with a live progress indicator so the page does not get overwhelmed by too many API calls
-- Table contains columns that shows all Pokemons sprite, name, type badges, and base stats
-- User can click the column header to sort ascending or descending with arrow indicators to show what type
-- Real-time search filtering by name as the user types
-- Contains "Add" button that allows the user to add the Pokemon straight to their team from the Pokedex
-- The "Add" button changes to "Added" to show whether a Pokemon has been added to the team
-- Has a sticky header that stays visible while scrolling through the Pokedex
+- All 1025 Pokemon in a searchable, sortable table
+- Loads in batches of 250 with a live progress indicator
+- Sort by any stat column, ascending or descending
+- Real-time name filtering as you type
+- Add directly to your team from the table without having to search separately
+- Sticky header so you don't lose track of columns while scrolling
 
-### General
-- Pokemon generation 4 game inspired styling (my favorite generation of games and game design)
-- Nintendo DS style panel borders and hard shadows throughout
-- Color coded stat bars - Green for high, yellow for medium, and red for low stats
-- Basic mobile responsiveness
+---
 
-## How To Use The App:
+## How To Use It
 
-1. Type a Pokémon name or number into the search bar and press Search or hit Enter
-2. Or press the Random button to get a surprise Pokémon
-3. View their stats, abilities, and types on the search card
-4. Click "Add to Team" to add them to your team
+1. Type a Pokemon name or number and press Search (or hit Enter)
+2. Or hit Random for a surprise pick
+3. View their stats, types, and abilities on the card
+4. Click "Add to Team" to add them
 5. Check the type coverage chart to see your team's net weaknesses, resistances, and immunities
-6. Click "Export to Showdown" to copy your team to clipboard in Pokémon Showdown format
-7. Click "Scan for Meta Threats" to check your team against current competitive threats
-8. Use the Pokédex table to browse, search, and sort all 1025 Pokémon and add them directly to your team
-9. Click "Remove" on any team card to remove them
+6. Click "Scan for Meta Threats" to see how your team stacks up against current top threats
+7. Click "Export to Showdown" to copy your team to clipboard in Showdown format
+8. Use the Pokedex table to browse all 1025 Pokemon and add them directly to your team
+9. Click "Remove" on any team card to drop them
 
-## Tech Stack/Technologies Used:
+---
 
-* HTML
-* CSS
-* JavaScript
-* [PokeAPI](https://pokeapi.co/) - A free Pokemon API
-* [Google Fonts](https://fonts.google.com/) — Press Start 2P and VT323 for the pixel aesthetic
-* [Pokemon Showdown](https://pokemonshowdown.com/) - Export format
+## Tech Stack
 
-## What I learned:
+- HTML, CSS, Vanilla JavaScript — no frameworks
+- [PokeAPI](https://pokeapi.co/) — free Pokemon API powering all the data
+- [Google Fonts](https://fonts.google.com/) — Press Start 2P and VT323 for the pixel aesthetic
+- [Pokemon Showdown](https://pokemonshowdown.com/) — export format
 
-* How to fetch data from a public API using async/await
-* How to save and load data with localStorage
-* DOM manipulation with JavaScript
-* The debugging of cross-file errors between HTML, JavaScript, and CSS
-* CSS Flexbox for layouts
-* CSS transitions and animations for stat bars
-* Caching API responses to reduce redundant network requests
-* Using the navigator clipboard API for copy to clipboard funcionality
-* How to use data attributes to pass information to event listeners
-* Working with JavaScript Sets to avoid duplicate entries
-* Caching API responses to reduce redundant network requests
-* Batch loading API data with progress feedback for better user experience
-* Using Promise.all() to fetch multiple resources in parallel
-* Using the navigator clipboard API to copy to clipboard functionality
-* Building searchable and sortable tables in Vanilla JavaScript
-* Deploying a site with Vercel
+---
 
-## Features I want to implement:
+## What I Learned Building This
 
-* Pokedex description for each Pokemon?
-* Use the type weakness chart to recommend types of Pokemon that may synergize with the team?
-* Give user the ability to configure a Pokemons move set, ability, nature, or held item to add more build variety to export to showdown?
-* Filter Pokedex by type?
+- Fetching and processing data from a public REST API using async/await
+- Caching API responses to cut down on redundant network requests
+- Working with type effectiveness data and building net coverage logic from scratch
+- Batch loading large datasets with progress feedback so the page doesn't choke
+- Using Promise.all() to fetch multiple resources in parallel
+- Building searchable and sortable tables in Vanilla JavaScript
+- Persisting state with localStorage
+- DOM manipulation and dynamic HTML templating with template literals
+- The navigator clipboard API for copy-to-clipboard functionality
+- Using JavaScript Sets to handle deduplication
+- Using data attributes to pass information through event listeners
+- Deploying a static site with GitHub Pages
 
-**What Changed From the Last Version:
-- Added the Pokedex feature that is searchable and sortable
-- The Pokedex feature gives fans or new users who may not be familiar with many Pokemon the ability to look at all their options
+---
+
+## What's Next
+
+- Pokedex entries / flavor text for each Pokemon
+- Type-based recommendations — use the weakness chart to suggest what types would fill gaps on the team
+- Move set, ability, nature, and held item configuration for a fuller Showdown export
+- Filter the Pokedex by type
