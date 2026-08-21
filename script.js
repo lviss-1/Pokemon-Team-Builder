@@ -113,7 +113,21 @@ async function loadPokedexData()
         for(let i = 0; i < listData.results.length; i += batchSize)
         {
             const batch = listData.results.slice(i, i + batchSize);
-            const detailPromises = batch.map(p => fetch(p.url).then(r => r.json()));
+            const detailPromises = batch.map(p => {
+                const cached = localStorage.getItem(`pokemon_${p.name}`);
+                if(cached) return Promise.resolve(JSON.parse(cached));
+                return fetch(p.url).then(r => r.json()).then(data => {
+                    try
+                    {
+                        localStorage.setItem(`pokemon_${p.name}`, JSON.stringify(data));
+                    }
+                    catch(error)
+                    {
+                        console.warn(`Could not cache ${p.name}: ${error.name}`);
+                    }
+                    return data;
+                });
+            });
             const detailResults = await Promise.all(detailPromises);
 
             detailResults.forEach(data => {
