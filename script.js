@@ -115,6 +115,11 @@ async function loadPokedexData()
             const batch = listData.results.slice(i, i + batchSize);
             const detailPromises = batch.map(p => {
                 const cached = localStorage.getItem(`pokemon_${p.name}`);
+                if (cached) {
+                  console.count('CACHE HIT');
+                } else {
+                  console.count('CACHE MISS (network fetch)');
+                }
                 if(cached) return Promise.resolve(JSON.parse(cached));
                 return fetch(p.url).then(r => r.json()).then(data => {
                     try
