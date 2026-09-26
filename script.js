@@ -10,12 +10,38 @@ const exportBtn = document.getElementById("exportBtn");
 const scanBtn = document.getElementById("scanBtn");
 const threatReport = document.getElementById("threatReport");
 
+function getDefaultAbility(abilities)
+{
+    const defaultAbility = abilities.find(ability => ability.slot === 1) ?? abilities[0];
+    return defaultAbility ? defaultAbility.name : null;
+}
+
+// Saved teams come in three shapes: abilities as display strings ("flash fire") from before ability slots
+// existed, ability objects without a selectedAbility, and the current shape. All leave here as the current shape.
+function migrateTeamMember(member)
+{
+    const abilities = (member.abilities || []).map(ability =>
+        typeof ability === "string" ? { name: ability.replaceAll(" ", "-"), slot: null, isHidden: null } : ability
+    );
+    const hasValidSelection = abilities.some(ability => ability.name === member.selectedAbility);
+
+    return {
+        ...member,
+        abilities,
+        selectedAbility: hasValidSelection ? member.selectedAbility : getDefaultAbility(abilities)
+    };
+}
+
 function loadTeam()
 {
     try
     {
         const savedTeam = JSON.parse(localStorage.getItem("pokemonTeam"));
-        return Array.isArray(savedTeam) ? savedTeam : [];
+        if (!Array.isArray(savedTeam)) return [];
+
+        return savedTeam
+            .filter(member => member && typeof member.name === "string")
+            .map(migrateTeamMember);
     }
     catch(error)
     {
@@ -33,18 +59,19 @@ let sortDesc = false;
 
 const AMOUNT_OF_POKEMON = 1025;
 
-const MULTIPLIER_DISPLAY = {
-    4:    { label: "4", className: "multQuadWeak" },
-    2:    { label: "2", className: "multWeak" },
-    1:    { label: "·", className: "multNeutral" },
-    0.5:  { label: "½", className: "multResist" },
-    0.25: { label: "¼", className: "multQuadResist" },
-    0:    { label: "0", className: "multImmune" }
-};
+const FRACTION_LABELS = { 0.5: "½", 0.25: "¼", 0.125: "⅛" };
 
 function saveTeam()
 {
-    localStorage.setItem("pokemonTeam", JSON.stringify(team));
+    try
+    {
+        localStorage.setItem("pokemonTeam", JSON.stringify(team));
+    }
+    catch(error)
+    {
+        console.warn("Could not save team: ", error);
+        showMessage("Couldn't save your team in this browser. Changes will be lost on refresh.", true);
+    }
 }
 
 function showMessage(message, isError = false)
@@ -67,9 +94,22 @@ function formatName(name)
     return name.split("-").map(capitalize).join("-");
 }
 
-function formatAbility(ability)
+function formatAbilityLabel(abilitySlug)
 {
-    return ability.split(" ").map(capitalize).join(" ");
+    return abilitySlug.split("-").map(capitalize).join(" ");
+}
+
+function normalizePokemon(data)
+{
+    return {
+        id: data.id,
+        name: data.name,
+        showdownName: toShowdownName(data),
+        types: data.types.map(t => t.type.name),
+        image: data.sprites.front_default,
+        abilities: data.abilities.map(a => ({ name: a.ability.name, slot: a.slot, isHidden: a.is_hidden })),
+        stats: data.stats.map(s => ({ name: s.stat.name, value: s.base_stat }))
+    };
 }
 
 function toShowdownName(data)
@@ -82,9 +122,9 @@ function generateShowdownText(team)
 {
     return team.map(pokemon => {
         const speciesLine = pokemon.showdownName ?? formatName(pokemon.name);
-        const ability = pokemon.abilities?.[0];
+        const ability = pokemon.selectedAbility;
 
-        return ability ? `${speciesLine}\nAbility: ${formatAbility(ability)}` : speciesLine;
+        return ability ? `${speciesLine}\nAbility: ${formatAbilityLabel(ability)}` : speciesLine;
     }).join("\n\n");
 }
 
@@ -93,12 +133,40 @@ function getMultiplier(attackType, defenderTypes)
     return defenderTypes.reduce((multiplier, defenderType) => multiplier * (TYPE_EFFECTIVENESS[attackType][defenderType] ?? 1), 1);
 }
 
+// Type-chart multiplier adjusted for the defender's selected ability. Use getMultiplier for pure type math.
+function getDamageTaken(attackType, pokemon)
+{
+    const typeMultiplier = getMultiplier(attackType, pokemon.types || []);
+    const ability = pokemon.selectedAbility;
+
+    if (ability === WONDER_GUARD) return typeMultiplier >= 2 ? typeMultiplier : 0;
+    if (SUPER_EFFECTIVE_REDUCERS.has(ability) && typeMultiplier > 1) return typeMultiplier * 0.75;
+
+    return typeMultiplier * (ABILITY_DAMAGE_MODIFIERS[ability]?.[attackType] ?? 1);
+}
+
+function formatMultiplier(value)
+{
+    if (value === 1) return "·";
+    return FRACTION_LABELS[value] ?? String(value);
+}
+
+function multiplierClass(value)
+{
+    if (value === 0) return "multImmune";
+    if (value <= 0.25) return "multQuadResist";
+    if (value < 1) return "multResist";
+    if (value === 1) return "multNeutral";
+    if (value < 4) return "multWeak";
+    return "multQuadWeak";
+}
+
 // Offensive answers carry a type that hits the threat super effectively (a STAB move of that type).
 // Defensive answers resist or are immune to every one of the threat's STAB types.
 function findThreatAnswers(threat, team)
 {
     const offensive = team.filter(pokemon => (pokemon.types || []).some(type => getMultiplier(type, threat.types) >= 2));
-    const defensive = team.filter(pokemon => threat.types.every(type => getMultiplier(type, pokemon.types || []) < 1));
+    const defensive = team.filter(pokemon => threat.types.every(type => getDamageTaken(type, pokemon) < 1));
 
     return {
         offensive: offensive.map(pokemon => pokemon.name),
@@ -181,13 +249,7 @@ async function loadPokedexData()
 
             detailResults.forEach(data => {
                 pokedexData.push({
-                    id: data.id,
-                    name: data.name,
-                    showdownName: toShowdownName(data),
-                    types: data.types.map(t => t.type.name),
-                    image: data.sprites.front_default,
-                    abilities: data.abilities.map(a => a.ability.name.replaceAll("-", " ")),
-                    stats: data.stats.map(s => ({ name: s.stat.name, value: s.base_stat })),
+                    ...normalizePokemon(data),
                     hp: data.stats[0].base_stat,
                     attack: data.stats[1].base_stat,
                     defense: data.stats[2].base_stat,
@@ -396,16 +458,26 @@ function buildCoverageRow(attackType)
     let resistCount = 0;
 
     team.forEach(pokemon => {
-        const multiplier = getMultiplier(attackType, pokemon.types || []);
-        const display = MULTIPLIER_DISPLAY[multiplier];
+        const multiplier = getDamageTaken(attackType, pokemon);
+        const changedByAbility = multiplier !== getMultiplier(attackType, pokemon.types || []);
 
         if (multiplier > 1) weakCount++;
         if (multiplier < 1) resistCount++;
 
         const cell = document.createElement("td");
-        cell.className = `coverageCell ${display.className}`;
-        cell.textContent = display.label;
+        cell.className = `coverageCell ${multiplierClass(multiplier)}`;
+        cell.textContent = formatMultiplier(multiplier);
         cell.title = `${capitalize(pokemon.name)} takes ${multiplier}× from ${capitalize(attackType)}`;
+
+        if (changedByAbility)
+        {
+            const marker = document.createElement("span");
+            marker.className = "abilityMarker";
+            marker.textContent = "*";
+            cell.appendChild(marker);
+            cell.title += ` (${formatAbilityLabel(pokemon.selectedAbility)})`;
+        }
+
         row.appendChild(cell);
     });
 
@@ -455,7 +527,7 @@ function displayWeaknessChart()
 
     const legend = document.createElement("p");
     legend.className = "coverageLegend";
-    legend.textContent = "Damage each member takes from each attacking type. Highlighted rows: more members weak than resistant.";
+    legend.textContent = "Damage each member takes from each attacking type. * = changed by the member's ability (ignored by attackers with Mold Breaker and similar). Highlighted rows: more members weak than resistant.";
     panel.appendChild(legend);
 
     weaknessChart.replaceChildren(panel);
@@ -466,6 +538,58 @@ function statColor(value)
     if (value >= 90) return "#48c048";
     if (value >= 60) return "#f8d030";
     return "#e63946";
+}
+
+function formatAbilityOption(ability)
+{
+    const label = formatAbilityLabel(ability.name);
+    return ability.isHidden ? `${label} (Hidden)` : label;
+}
+
+function markThreatReportStale()
+{
+    if (!threatReport.hasChildNodes()) return;
+    threatReport.innerHTML = `<p class="emptyMessage">Your team changed. Scan again to update threats.</p>`;
+}
+
+// Re-renders only the chart so the dropdown keeps focus; displayTeam() would rebuild every card.
+function changeAbility(pokemon, abilityName)
+{
+    pokemon.selectedAbility = abilityName;
+    displayWeaknessChart();
+    markThreatReportStale();
+    saveTeam();
+}
+
+function buildAbilityPicker(pokemon)
+{
+    const container = document.createElement("div");
+    container.className = "ability-text";
+
+    if (pokemon.abilities.length <= 1)
+    {
+        const onlyAbility = pokemon.abilities[0];
+        container.textContent = `Ability: ${onlyAbility ? formatAbilityOption(onlyAbility) : "Unknown"}`;
+        return container;
+    }
+
+    container.textContent = "Ability:";
+
+    const select = document.createElement("select");
+    select.className = "abilitySelect";
+    select.setAttribute("aria-label", `Ability for ${capitalize(pokemon.name)}`);
+
+    pokemon.abilities.forEach(ability => {
+        const option = document.createElement("option");
+        option.value = ability.name;
+        option.textContent = formatAbilityOption(ability);
+        option.selected = ability.name === pokemon.selectedAbility;
+        select.appendChild(option);
+    });
+
+    select.addEventListener("change", () => changeAbility(pokemon, select.value));
+    container.appendChild(select);
+    return container;
 }
 
 function displayTeam()
@@ -496,15 +620,13 @@ function displayTeam()
             </div>
         `).join("");
 
-        const abilities = (pokemon.abilities || []).map(a => capitalize(a)).join(" / ");
-
         card.innerHTML = `<img src="${pokemon.image}" alt="${pokemon.name}"/>
             <p class="pokemon-name">${capitalize(pokemon.name)}</p>
             <div class="type-container">${typeBadges}</div>
-            <p class="ability-text">Ability: ${abilities}</p>
             <div class="statBlock">${statBars}</div>
             <button class="remove-btn" data-index="${index}">Remove</button>`;
 
+        card.insertBefore(buildAbilityPicker(pokemon), card.querySelector(".statBlock"));
         teamContainer.appendChild(card);
     });
 
@@ -514,6 +636,21 @@ function displayTeam()
             removeFromTeam(index);
         });
     });
+}
+
+// Team members are copies so choosing an ability never mutates the Pokédex row or search result they came from.
+function createTeamMember(pokemon)
+{
+    return {
+        id: pokemon.id,
+        name: pokemon.name,
+        showdownName: pokemon.showdownName,
+        types: [...pokemon.types],
+        image: pokemon.image,
+        abilities: pokemon.abilities.map(ability => ({ ...ability })),
+        stats: pokemon.stats.map(stat => ({ ...stat })),
+        selectedAbility: getDefaultAbility(pokemon.abilities)
+    };
 }
 
 function refreshPokedexTable()
@@ -539,9 +676,10 @@ function addToTeam()
         return;
     }
 
-    team.push(currentPokemon);
+    team.push(createTeamMember(currentPokemon));
     saveTeam();
     displayTeam();
+    markThreatReportStale();
     refreshPokedexTable();
     showMessage(`${capitalize(currentPokemon.name)} added to your team!`);
 }
@@ -552,6 +690,7 @@ function removeFromTeam(index)
     team.splice(index, 1);
     saveTeam();
     displayTeam();
+    markThreatReportStale();
     refreshPokedexTable();
     showMessage(`${capitalize(removedPokemon.name)} removed from your team.`);
 }
@@ -615,17 +754,7 @@ async function searchPokemon()
             return;
         }
 
-        const stats = data.stats.map(s => ({ name: s.stat.name, value: s.base_stat }));
-        const abilities = data.abilities.map(a => a.ability.name.replaceAll("-", " "));
-
-        currentPokemon = {
-            name: data.name,
-            showdownName: toShowdownName(data),
-            image: data.sprites.front_default,
-            types: data.types.map(t => t.type.name),
-            stats: stats,
-            abilities: abilities
-        };
+        currentPokemon = normalizePokemon(data);
 
         const statBars = currentPokemon.stats.map(s => `
         <div class="statRow">
@@ -637,7 +766,7 @@ async function searchPokemon()
         </div>
         `).join("");
 
-        const abilitiesDisplay = currentPokemon.abilities.map(a => capitalize(a)).join(" / ");
+        const abilitiesDisplay = currentPokemon.abilities.map(a => formatAbilityLabel(a.name)).join(" / ");
         const typeBadges = currentPokemon.types.map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
         pokemonDisplay.innerHTML = `
             <div class="pokemonCard">
@@ -671,20 +800,7 @@ async function randomPokemon()
         if (!response.ok) throw new Error("Not found");
         const data = await response.json();
 
-        const stats = data.stats.map(a => ({
-            name: a.stat.name,
-            value: a.base_stat
-        }));
-        const abilities = data.abilities.map(a => a.ability.name.replaceAll("-", " "));
-
-        currentPokemon = {
-            name: data.name,
-            showdownName: toShowdownName(data),
-            image: data.sprites.front_default,
-            types: data.types.map(t => t.type.name),
-            stats: stats,
-            abilities: abilities
-        };
+        currentPokemon = normalizePokemon(data);
 
         const typeBadges = currentPokemon.types.map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
         const statsBars = currentPokemon.stats.map(s => `
@@ -697,7 +813,7 @@ async function randomPokemon()
             </div>
         `).join("");
 
-        const abilitiesDisplay = currentPokemon.abilities.map(a => capitalize(a)).join(" / ");
+        const abilitiesDisplay = currentPokemon.abilities.map(a => formatAbilityLabel(a.name)).join(" / ");
         pokemonDisplay.innerHTML = `
             <div class="pokemonCard">
                 <img src="${currentPokemon.image}" alt="${currentPokemon.name}" class="searchSprite"/>

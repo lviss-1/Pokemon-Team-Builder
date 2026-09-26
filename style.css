@@ -197,6 +197,24 @@ button:active {
     margin: 4px 0 8px 0;
 }
 
+.abilitySelect {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    padding: 2px 4px;
+    font-family: 'VT323', monospace;
+    font-size: 1rem;
+    color: #1a1f3a;
+    background-color: #f0f4ff;
+    border: 2px solid #6a8ac8;
+    border-radius: 4px;
+}
+
+.abilitySelect:focus {
+    outline: none;
+    border-color: #f8d030;
+}
+
 .remove-btn {
     background-color: #e63946;
     color: white;
@@ -355,6 +373,11 @@ button:active {
 .coverageExposed .multQuadWeak { background-color: #b01e2a; }
 .coverageExposed .multQuadResist { background-color: #1f6a1f; }
 .coverageExposed .multImmune { background-color: #2a3a6e; }
+
+.abilityMarker {
+    font-size: 0.8em;
+    vertical-align: super;
+}
 
 .coverageLegend {
     font-size: 1rem;
