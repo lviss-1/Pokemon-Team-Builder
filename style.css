@@ -442,6 +442,18 @@ button:active {
     margin-bottom: 8px;
 }
 
+.threatAnswer {
+    font-family: 'VT323', monospace;
+    font-size: 1rem;
+    color: #1a1f3a;
+    text-align: left;
+    margin-bottom: 4px;
+}
+
+.threatAnswerLabel {
+    color: #2a3a6e;
+}
+
 .threatStatus {
     font-family: 'Press Start 2P', monospace;
     font-size: 0.55rem;
