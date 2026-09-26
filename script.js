@@ -10,7 +10,21 @@ const exportBtn = document.getElementById("exportBtn");
 const scanBtn = document.getElementById("scanBtn");
 const threatReport = document.getElementById("threatReport");
 
-let team = JSON.parse(localStorage.getItem("pokemonTeam")) || [];
+function loadTeam()
+{
+    try
+    {
+        const savedTeam = JSON.parse(localStorage.getItem("pokemonTeam"));
+        return Array.isArray(savedTeam) ? savedTeam : [];
+    }
+    catch(error)
+    {
+        console.warn("Could not load saved team, starting with an empty team: ", error);
+        return [];
+    }
+}
+
+let team = loadTeam();
 let currentPokemon = null;
 let pokedexData = [];
 let filteredData = [];
@@ -186,8 +200,9 @@ function renderTable(data)
         emptyCell.style.textAlign = "center";
         emptyCell.style.padding = "20px";
 
-        emptyRow = appendChild(emptyCell);
+        emptyRow.appendChild(emptyCell);
         tBody.appendChild(emptyRow);
+        document.getElementById("pokedexStatus").textContent = `Showing 0 of ${pokedexData.length} Pokémon`;
         return;
     }
 
@@ -237,7 +252,6 @@ function renderTable(data)
         addBtn.addEventListener("click", () => {
             currentPokemon = pokemon;
             addToTeam();
-            renderTable(filteredData);
         });
 
         addCell.appendChild(addBtn);
@@ -263,7 +277,7 @@ function sortData(key)
     filteredData.sort((a, b) => {
         if(typeof a[key] === "string")
         {
-            return sortdesc ? b[key].localeCompare(a[key]) : a[key].localeCompare(b[key]);
+            return sortDesc ? b[key].localeCompare(a[key]) : a[key].localeCompare(b[key]);
         }
         return sortDesc ? b[key] - a[key] : a[key] - b[key];
     });
@@ -418,6 +432,12 @@ function displayTeam()
     displayWeaknessChart();
 }
 
+function refreshPokedexTable()
+{
+    if (pokedexData.length === 0) return;
+    renderTable(filteredData);
+}
+
 function addToTeam()
 {
     if (!currentPokemon) return;
@@ -438,6 +458,7 @@ function addToTeam()
     team.push(currentPokemon);
     saveTeam();
     displayTeam();
+    refreshPokedexTable();
     showMessage(`${capitalize(currentPokemon.name)} added to your team!`);
 }
 
@@ -447,6 +468,7 @@ function removeFromTeam(index)
     team.splice(index, 1);
     saveTeam();
     displayTeam();
+    refreshPokedexTable();
     showMessage(`${capitalize(removedPokemon.name)} removed from your team.`);
 }
 
@@ -508,7 +530,7 @@ async function searchPokemon()
     catch (error)
     {
         currentPokemon = null;
-        pokemonDisplay.innerHTML = `<p class="messageError">Pokémon not found. Please try again.</p>`;
+        pokemonDisplay.innerHTML = `<p class="message error">Pokémon not found. Please try again.</p>`;
     }
 }
 
@@ -596,7 +618,7 @@ scanBtn.addEventListener("click", async () => {
         return;
     }
 
-    threatReport.innerHTML = `<p class=message">Scanning for threats...</p>`;
+    threatReport.innerHTML = `<p class="message">Scanning for threats...</p>`;
 
     const results = await checkTeamVulnerabilities(team, TOP_THREATS);
 
