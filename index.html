@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Pokémon Team Builder</title>
+        <link rel="stylesheet" href="style.css"/>
+        <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet"/>
+    </head>
+    <body>
+        <header>
+        <h1 class="site-title">POKÉMON TEAM BUILDER</h1>
+        </header>
+
+        <main>
+            <section class="searchSection">
+                <input type="text" id="pokemonInput" placeholder="Enter Pokémon name or number" autocomplete="off"/>
+                <button id="searchBtn">Search</button>
+                <button id="randomBtn">? Random</button>
+            </section>
+
+            <section id="pokemonDisplay"></section>
+
+            <section class="teamSection">
+                <h2>YOUR TEAM</h2>
+                <button id="exportBtn" class="exportBtn">Export To Pokemon Showdown</button>
+                <div id="teamContainer"></div>
+            </section>
+
+            <section class="weaknessSection">
+                <div id="weaknessChart"></div>
+            </section>
+
+            <section class="threatSection">
+                <h2 class="section-title">Meta Threat Scanner</h2>
+                <button id="scanBtn" class="scanBtn">Scan for Meta Threats</button>
+                <div id="threatReport"></div>
+            </section>
+
+            <section class="pokedexSection">
+                <h2 class="section-title">Pokedex</h2>
+                <input type="text" id="pokedexSearch" placeholder="Search Pokemon..." autocomplete="off" class="pokedexSearchInput"/>
+                <div class="tableWrapper">
+                    <table id="pokedexTable">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-key="id">#</th>
+                                <th>Sprite</th>
+                                <th class="sortable" data-key="name">Name</th>
+                                <th>Type</th>
+                                <th class="sortable" data-key="hp">HP</th>
+                                <th class="sortable" data-key="attack">ATK</th>
+                                <th class="sortable" data-key="defense">DEF</th>
+                                <th class="sortable" data-key="specialAttack">SpA</th>
+                                <th class="sortable" data-key="specialDefense">SpD</th>
+                                <th class="sortable" data-key="speed">SPD</th>
+                                <th>Add</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pokedexBody"></tbody>
+                    </table>
+                </div>
+                <p id="pokedexStatus" class="pokedexStatus">Loading Pokedex...</p>
+            </section>
+        </main>
+
+        <script src="metaData.js"></script>
+        <script src="script.js"></script>
+    </body>
+</html>
