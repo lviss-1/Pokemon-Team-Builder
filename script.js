@@ -32,7 +32,15 @@ let sortKey = "id";
 let sortDesc = false;
 
 const AMOUNT_OF_POKEMON = 1025;
-const typeCache = {};
+
+const MULTIPLIER_DISPLAY = {
+    4:    { label: "4", className: "multQuadWeak" },
+    2:    { label: "2", className: "multWeak" },
+    1:    { label: "·", className: "multNeutral" },
+    0.5:  { label: "½", className: "multResist" },
+    0.25: { label: "¼", className: "multQuadResist" },
+    0:    { label: "0", className: "multImmune" }
+};
 
 function saveTeam()
 {
@@ -54,20 +62,35 @@ function capitalize(str)
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+function formatName(name)
+{
+    return name.split("-").map(capitalize).join("-");
+}
+
+function formatAbility(ability)
+{
+    return ability.split(" ").map(capitalize).join(" ");
+}
+
+function toShowdownName(data)
+{
+    if (SHOWDOWN_NAME_OVERRIDES[data.name]) return SHOWDOWN_NAME_OVERRIDES[data.name];
+    return formatName(data.is_default ? data.species.name : data.name);
+}
+
 function generateShowdownText(team)
 {
     return team.map(pokemon => {
-        const nameLine = capitalize(pokemon.name);
-        const abilityLine = (pokemon.abilities && pokemon.abilities.length > 0) ? `Ability: ${capitalize(pokemon.abilities[0])}` : null;
+        const speciesLine = pokemon.showdownName ?? formatName(pokemon.name);
+        const ability = pokemon.abilities?.[0];
 
-        const statLines = (pokemon.stats || []).map(s => {
-            if(s.value === undefined || s.value === null) return null;
-            return `- ${capitalize(s.name)}: ${s.value}`;
-        }).filter(line => line !== null);
-        
-        const lines = [nameLine, abilityLine, ...statLines].filter(line => line !== null);
-        return lines.join("\n");
+        return ability ? `${speciesLine}\nAbility: ${formatAbility(ability)}` : speciesLine;
     }).join("\n\n");
+}
+
+function getMultiplier(attackType, defenderTypes)
+{
+    return defenderTypes.reduce((multiplier, defenderType) => multiplier * (TYPE_EFFECTIVENESS[attackType][defenderType] ?? 1), 1);
 }
 
 async function checkTeamVulnerabilities(team, threats)
@@ -153,9 +176,10 @@ async function loadPokedexData()
                 pokedexData.push({
                     id: data.id,
                     name: data.name,
+                    showdownName: toShowdownName(data),
                     types: data.types.map(t => t.type.name),
                     image: data.sprites.front_default,
-                    abilities: data.abilities.map(a => a.ability.name.replace("-", " ")),
+                    abilities: data.abilities.map(a => a.ability.name.replaceAll("-", " ")),
                     stats: data.stats.map(s => ({ name: s.stat.name, value: s.base_stat })),
                     hp: data.stats[0].base_stat,
                     attack: data.stats[1].base_stat,
@@ -299,7 +323,94 @@ function sortData(key)
     renderTable(filteredData);
 }
 
-async function displayWeaknessChart()
+function buildCoverageHeader()
+{
+    const head = document.createElement("thead");
+    const row = document.createElement("tr");
+
+    const typeHeader = document.createElement("th");
+    typeHeader.textContent = "ATK";
+    row.appendChild(typeHeader);
+
+    team.forEach(pokemon => {
+        const memberHeader = document.createElement("th");
+        memberHeader.title = capitalize(pokemon.name);
+
+        if (pokemon.image)
+        {
+            const sprite = document.createElement("img");
+            sprite.src = pokemon.image;
+            sprite.alt = capitalize(pokemon.name);
+            sprite.className = "coverageSprite";
+            memberHeader.appendChild(sprite);
+        }
+        else
+        {
+            memberHeader.textContent = pokemon.name.slice(0, 4).toUpperCase();
+        }
+
+        row.appendChild(memberHeader);
+    });
+
+    const weakHeader = document.createElement("th");
+    weakHeader.className = "coverageCount coverageWeakCount";
+    weakHeader.textContent = "Weak";
+    row.appendChild(weakHeader);
+
+    const resistHeader = document.createElement("th");
+    resistHeader.className = "coverageCount";
+    resistHeader.textContent = "Resist";
+    row.appendChild(resistHeader);
+
+    head.appendChild(row);
+    return head;
+}
+
+function buildCoverageRow(attackType)
+{
+    const row = document.createElement("tr");
+
+    const typeCell = document.createElement("th");
+    typeCell.scope = "row";
+    const badge = document.createElement("span");
+    badge.className = `typeBadge type-${attackType}`;
+    badge.textContent = capitalize(attackType);
+    typeCell.appendChild(badge);
+    row.appendChild(typeCell);
+
+    let weakCount = 0;
+    let resistCount = 0;
+
+    team.forEach(pokemon => {
+        const multiplier = getMultiplier(attackType, pokemon.types || []);
+        const display = MULTIPLIER_DISPLAY[multiplier];
+
+        if (multiplier > 1) weakCount++;
+        if (multiplier < 1) resistCount++;
+
+        const cell = document.createElement("td");
+        cell.className = `coverageCell ${display.className}`;
+        cell.textContent = display.label;
+        cell.title = `${capitalize(pokemon.name)} takes ${multiplier}× from ${capitalize(attackType)}`;
+        row.appendChild(cell);
+    });
+
+    const weakCell = document.createElement("td");
+    weakCell.className = "coverageCount coverageWeakCount";
+    weakCell.textContent = weakCount;
+    row.appendChild(weakCell);
+
+    const resistCell = document.createElement("td");
+    resistCell.className = "coverageCount";
+    resistCell.textContent = resistCount;
+    row.appendChild(resistCell);
+
+    if (weakCount > resistCount) row.classList.add("coverageExposed");
+
+    return row;
+}
+
+function displayWeaknessChart()
 {
     if (team.length === 0)
     {
@@ -307,74 +418,33 @@ async function displayWeaknessChart()
         return;
     }
 
-    weaknessChart.innerHTML = `<p class="message">Loading type data...</p>`;
+    const panel = document.createElement("div");
+    panel.className = "chartPanel";
 
-    const weaknessSet = new Set();
-    const resistanceSet = new Set();
-    const immuneSet = new Set();
+    const title = document.createElement("h3");
+    title.className = "chartTitle";
+    title.textContent = "Team Type Coverage";
+    panel.appendChild(title);
 
-    try
-    {
-        for (const pokemon of team)
-        {
-            const pokemonWeaknesses = new Set();
-            const pokemonResistances = new Set();
-            const pokemonImmunes = new Set();
+    const table = document.createElement("table");
+    table.className = "coverageTable";
+    table.appendChild(buildCoverageHeader());
 
-            for (const type of pokemon.types)
-            {
-                const response = await fetch(`${pokeAPI}/type/${type}`);
-                const data = await response.json();
+    const body = document.createElement("tbody");
+    TYPE_ORDER.forEach(attackType => body.appendChild(buildCoverageRow(attackType)));
+    table.appendChild(body);
 
-                data.damage_relations.double_damage_from.forEach(t => {pokemonWeaknesses.add(t.name);});
-                data.damage_relations.half_damage_from.forEach(t => {pokemonResistances.add(t.name);});
-                data.damage_relations.no_damage_from.forEach(t => {pokemonImmunes.add(t.name);});
-            }
+    const wrapper = document.createElement("div");
+    wrapper.className = "coverageWrapper";
+    wrapper.appendChild(table);
+    panel.appendChild(wrapper);
 
-        pokemonImmunes.forEach(t => pokemonWeaknesses.delete(t));
+    const legend = document.createElement("p");
+    legend.className = "coverageLegend";
+    legend.textContent = "Damage each member takes from each attacking type. Highlighted rows: more members weak than resistant.";
+    panel.appendChild(legend);
 
-        pokemonWeaknesses.forEach(t => weaknessSet.add(t));
-        pokemonResistances.forEach(t => resistanceSet.add(t));
-        pokemonImmunes.forEach(t => immuneSet.add(t));
-        }
-
-        const filteredWeaknesses = Array.from(weaknessSet).filter(t => {return !resistanceSet.has(t) && !immuneSet.has(t);});
-        const resistances = Array.from(resistanceSet);
-        const immunities = Array.from(immuneSet);
-
-
-        function buildBadgeList(typeArray)
-        {
-            if (typeArray.length === 0)
-                {
-                    return `<p class="emptyMessage">None</p>`;
-                }
-            return typeArray.map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
-        }
-
-        weaknessChart.innerHTML = `
-        <div class="chartPanel">
-            <h3 class="chartTitle">Team Type Coverage</h3>
-            <div class="chartColumns">
-                <div class="chartColumn">
-                    <p class="chartLabel weakLabel">Weak To</p>
-                    <div class="chartBadges">${buildBadgeList(filteredWeaknesses)}</div>
-                </div>
-                <div class="chartColumn">
-                    <p class="chartLabel resistLabel">Resists</p>
-                    <div class="chartBadges">${buildBadgeList(resistances)}</div>
-                </div>
-                <div class="chartColumn">
-                    <p class="chartLabel immuneLabel">Immune To</p>
-                    <div class="chartBadges">${buildBadgeList(immunities)}</div>
-                </div>
-            </div>
-        </div>
-        `;
-    } catch (error)
-    {
-        weaknessChart.innerHTML = `<p class="message error">Failed to load type data. Please try again later.</p>`;
-    }
+    weaknessChart.replaceChildren(panel);
 }
 
 function statColor(value)
@@ -386,6 +456,8 @@ function statColor(value)
 
 function displayTeam()
 {
+    displayWeaknessChart();
+
     if (team.length === 0)
     {
         teamContainer.innerHTML = `<p class="emptyMessage">Your team is empty. Search for a Pokémon and add it to your team!</p>`;
@@ -428,8 +500,6 @@ function displayTeam()
             removeFromTeam(index);
         });
     });
-
-    displayWeaknessChart();
 }
 
 function refreshPokedexTable()
@@ -491,10 +561,11 @@ async function searchPokemon()
         const data = await response.json();
 
         const stats = data.stats.map(s => ({ name: s.stat.name, value: s.base_stat }));
-        const abilities = data.abilities.map(a => a.ability.name.replace("-", " "));
+        const abilities = data.abilities.map(a => a.ability.name.replaceAll("-", " "));
 
         currentPokemon = {
             name: data.name,
+            showdownName: toShowdownName(data),
             image: data.sprites.front_default,
             types: data.types.map(t => t.type.name),
             stats: stats,
@@ -548,10 +619,11 @@ async function randomPokemon()
             name: a.stat.name,
             value: a.base_stat
         }));
-        const abilities = data.abilities.map(a => a.ability.name.replace("-", " "));
+        const abilities = data.abilities.map(a => a.ability.name.replaceAll("-", " "));
 
         currentPokemon = {
             name: data.name,
+            showdownName: toShowdownName(data),
             image: data.sprites.front_default,
             types: data.types.map(t => t.type.name),
             stats: stats,

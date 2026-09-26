@@ -293,10 +293,73 @@ button:active {
     letter-spacing: 2px;
 }
 
-.chartBadges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+.coverageWrapper {
+    overflow-x: auto;
+}
+
+.coverageTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'VT323', monospace;
+    font-size: 1.3rem;
+}
+
+.coverageTable th,
+.coverageTable td {
+    padding: 2px 4px;
+    text-align: center;
+    border-bottom: 1px solid #b8cfe9;
+}
+
+.coverageTable thead th {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.4rem;
+    color: #1a1f3a;
+    vertical-align: bottom;
+    border-bottom: 2px solid #6a8ac8;
+}
+
+.coverageTable tbody th {
+    text-align: left;
+    white-space: nowrap;
+}
+
+.coverageSprite {
+    width: 40px;
+    height: 40px;
+    image-rendering: pixelated;
+    display: block;
+    margin: 0 auto;
+}
+
+.coverageCount {
+    color: #1a1f3a;
+}
+
+.coverageWeakCount {
+    border-left: 2px solid #6a8ac8;
+}
+
+.coverageExposed th,
+.coverageExposed td {
+    background-color: #f0d4d4;
+}
+
+.multNeutral { color: #8aaad0; }
+.multWeak { color: #b01e2a; }
+.multQuadWeak { color: #ffffff; background-color: #b01e2a; }
+.multResist { color: #1f6a1f; }
+.multQuadResist { color: #ffffff; background-color: #1f6a1f; }
+.multImmune { color: #ffffff; background-color: #2a3a6e; }
+
+.coverageExposed .multQuadWeak { background-color: #b01e2a; }
+.coverageExposed .multQuadResist { background-color: #1f6a1f; }
+.coverageExposed .multImmune { background-color: #2a3a6e; }
+
+.coverageLegend {
+    font-size: 1rem;
+    color: #2a3a6e;
+    margin-top: 8px;
 }
 
 .message {
@@ -322,33 +385,6 @@ button:active {
     text-align: center;
     font-size: 1.5rem;
 }
-
-.chartColumns {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-
-.chartColumn {
-    flex: 1;
-    min-width: 150px;
-    background-color: #c8dff0;
-    border: 2px solid #6a8ac8;
-    border-radius: 6px;
-    padding: 10px;
-}
-
-.chartLabel {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.65rem;
-    color: #1a1f3a;
-    margin-bottom: 8px;
-    letter-spacing: 1px;
-}
-
-.weakLabel { color: #e63946; }
-.resistLabel { color: #2a7a2a; }
-.immuneLabel { color: #2a3a6e; }
 
 .threatSection {
     margin-top: 24px;
