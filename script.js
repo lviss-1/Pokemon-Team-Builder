@@ -1,3 +1,4 @@
+// ---- Configuration ----
 const POKE_API_BASE_URL = "https://pokeapi.co/api/v2";
 const POKEDEX_SIZE = 1025;
 const POKEDEX_BATCH_SIZE = 250;
@@ -14,6 +15,7 @@ const COPY_FEEDBACK_DURATION_MS = 2000;
 
 const FRACTION_LABELS = { 0.5: "½", 0.25: "¼", 0.125: "⅛" };
 
+// ---- DOM references ----
 const searchBtn = document.getElementById("searchBtn");
 const randomBtn = document.getElementById("randomBtn");
 const weaknessChart = document.getElementById("weaknessChart");
@@ -30,28 +32,60 @@ const sortableHeaders = document.querySelectorAll("#pokedexTable th.sortable");
 const POKEDEX_COLUMN_COUNT = document.querySelectorAll("#pokedexTable thead th").length;
 const EXPORT_BUTTON_LABEL = exportBtn.textContent;
 
-function getDefaultAbility(abilities)
+// ---- State ----
+let team = loadTeam();
+let currentPokemon = null;
+let pokedexData = [];
+let visiblePokedexData = [];
+let sortKey = "id";
+let sortDesc = false;
+
+// ---- Formatting ----
+function capitalize(str)
 {
-    const defaultAbility = abilities.find(ability => ability.slot === 1) ?? abilities[0];
-    return defaultAbility ? defaultAbility.name : null;
+    return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// Saved teams come in three shapes: abilities as display strings ("flash fire") from before ability slots
-// existed, ability objects without a selectedAbility, and the current shape. All leave here as the current shape.
-function migrateTeamMember(member)
+function formatName(name)
 {
-    const abilities = (member.abilities || []).map(ability =>
-        typeof ability === "string" ? { name: ability.replaceAll(" ", "-"), slot: null, isHidden: null } : ability
-    );
-    const hasValidSelection = abilities.some(ability => ability.name === member.selectedAbility);
-
-    return {
-        ...member,
-        abilities,
-        selectedAbility: hasValidSelection ? member.selectedAbility : getDefaultAbility(abilities)
-    };
+    return name.split("-").map(capitalize).join("-");
 }
 
+function formatAbilityLabel(abilitySlug)
+{
+    return abilitySlug.split("-").map(capitalize).join(" ");
+}
+
+function formatAbilityOption(ability)
+{
+    const label = formatAbilityLabel(ability.name);
+    return ability.isHidden ? `${label} (Hidden)` : label;
+}
+
+function formatMultiplier(value)
+{
+    if (value === 1) return "·";
+    return FRACTION_LABELS[value] ?? String(value);
+}
+
+function getMultiplierClass(value)
+{
+    if (value === 0) return "multImmune";
+    if (value <= 0.25) return "multQuadResist";
+    if (value < 1) return "multResist";
+    if (value === 1) return "multNeutral";
+    if (value < 4) return "multWeak";
+    return "multQuadWeak";
+}
+
+function getStatColor(value)
+{
+    if (value >= 90) return "#48c048";
+    if (value >= 60) return "#f8d030";
+    return "#e63946";
+}
+
+// ---- Saved team ----
 function loadTeam()
 {
     try
@@ -70,12 +104,21 @@ function loadTeam()
     }
 }
 
-let team = loadTeam();
-let currentPokemon = null;
-let pokedexData = [];
-let visiblePokedexData = [];
-let sortKey = "id";
-let sortDesc = false;
+// Saved teams come in three shapes: abilities as display strings ("flash fire") from before ability slots
+// existed, ability objects without a selectedAbility, and the current shape. All leave here as the current shape.
+function migrateTeamMember(member)
+{
+    const abilities = (member.abilities || []).map(ability =>
+        typeof ability === "string" ? { name: ability.replaceAll(" ", "-"), slot: null, isHidden: null } : ability
+    );
+    const hasValidSelection = abilities.some(ability => ability.name === member.selectedAbility);
+
+    return {
+        ...member,
+        abilities,
+        selectedAbility: hasValidSelection ? member.selectedAbility : getDefaultAbility(abilities)
+    };
+}
 
 function saveTeam()
 {
@@ -90,31 +133,7 @@ function saveTeam()
     }
 }
 
-function showMessage(message, isError = false)
-{
-    const msg = document.createElement("p");
-
-    msg.textContent = message;
-    msg.className = isError ? "message error" : "message success";
-    pokemonDisplay.prepend(msg);
-    setTimeout(() => msg.remove(), MESSAGE_DURATION_MS);
-}
-
-function capitalize(str)
-{
-    return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-function formatName(name)
-{
-    return name.split("-").map(capitalize).join("-");
-}
-
-function formatAbilityLabel(abilitySlug)
-{
-    return abilitySlug.split("-").map(capitalize).join(" ");
-}
-
+// ---- Pokémon data ----
 function normalizePokemon(data)
 {
     return {
@@ -125,6 +144,27 @@ function normalizePokemon(data)
         image: data.sprites.front_default,
         abilities: data.abilities.map(a => ({ name: a.ability.name, slot: a.slot, isHidden: a.is_hidden })),
         stats: data.stats.map(s => ({ name: s.stat.name, value: s.base_stat }))
+    };
+}
+
+function getDefaultAbility(abilities)
+{
+    const defaultAbility = abilities.find(ability => ability.slot === 1) ?? abilities[0];
+    return defaultAbility ? defaultAbility.name : null;
+}
+
+// Team members are copies so choosing an ability never mutates the Pokédex row or search result they came from.
+function createTeamMember(pokemon)
+{
+    return {
+        id: pokemon.id,
+        name: pokemon.name,
+        showdownName: pokemon.showdownName,
+        types: [...pokemon.types],
+        image: pokemon.image,
+        abilities: pokemon.abilities.map(ability => ({ ...ability })),
+        stats: pokemon.stats.map(stat => ({ ...stat })),
+        selectedAbility: getDefaultAbility(pokemon.abilities)
     };
 }
 
@@ -144,6 +184,7 @@ function generateShowdownText(teamMembers)
     }).join("\n\n");
 }
 
+// ---- Type matchups ----
 function getTypeMultiplier(attackType, defenderTypes)
 {
     return defenderTypes.reduce((multiplier, defenderType) => multiplier * (TYPE_EFFECTIVENESS[attackType][defenderType] ?? 1), 1);
@@ -161,33 +202,42 @@ function getDamageTaken(attackType, pokemon)
     return typeMultiplier * (ABILITY_DAMAGE_MODIFIERS[ability]?.[attackType] ?? 1);
 }
 
-function formatMultiplier(value)
+// ---- PokeAPI ----
+// Converts user input like "Mr. Mime", "Farfetch'd" or "Flabébé" into PokeAPI slugs (mr-mime, farfetchd, flabebe).
+function normalizeSearchQuery(input)
 {
-    if (value === 1) return "·";
-    return FRACTION_LABELS[value] ?? String(value);
+    return input
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "")
+        .replace("♀", "-f")
+        .replace("♂", "-m")
+        .toLowerCase()
+        .trim()
+        .replace(/[\s_]+/g, "-")
+        .replace(/[^a-z0-9-]/g, "")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
 }
 
-function getMultiplierClass(value)
+// PokeAPI's /pokemon endpoint only knows form names (giratina-altered), so species names (giratina)
+// fall back to /pokemon-species and resolve to its default variety. Returns null when nothing matches.
+async function fetchPokemonByNameOrId(query)
 {
-    if (value === 0) return "multImmune";
-    if (value <= 0.25) return "multQuadResist";
-    if (value < 1) return "multResist";
-    if (value === 1) return "multNeutral";
-    if (value < 4) return "multWeak";
-    return "multQuadWeak";
-}
+    const response = await fetch(`${POKE_API_BASE_URL}/pokemon/${query}`);
+    if (response.ok) return response.json();
+    if (response.status !== 404) throw new Error(`PokeAPI returned ${response.status}`);
 
-// Offensive answers carry a type that hits the threat super effectively (a STAB move of that type).
-// Defensive answers resist or are immune to every one of the threat's STAB types.
-function findThreatAnswers(threat, teamMembers)
-{
-    const offensive = teamMembers.filter(pokemon => (pokemon.types || []).some(type => getTypeMultiplier(type, threat.types) >= 2));
-    const defensive = teamMembers.filter(pokemon => threat.types.every(type => getDamageTaken(type, pokemon) < 1));
+    const speciesResponse = await fetch(`${POKE_API_BASE_URL}/pokemon-species/${query}`);
+    if (speciesResponse.status === 404) return null;
+    if (!speciesResponse.ok) throw new Error(`PokeAPI returned ${speciesResponse.status}`);
 
-    return {
-        offensive: offensive.map(pokemon => pokemon.name),
-        defensive: defensive.map(pokemon => pokemon.name)
-    };
+    const species = await speciesResponse.json();
+    const defaultVariety = species.varieties.find(variety => variety.is_default);
+    if (!defaultVariety) return null;
+
+    const varietyResponse = await fetch(defaultVariety.pokemon.url);
+    if (!varietyResponse.ok) throw new Error(`PokeAPI returned ${varietyResponse.status}`);
+    return varietyResponse.json();
 }
 
 async function fetchThreatSprite(threat)
@@ -207,28 +257,23 @@ async function fetchThreatSprite(threat)
     }
 }
 
-async function checkTeamVulnerabilities(teamMembers, threats)
-{
-    const sprites = await Promise.all(threats.map(fetchThreatSprite));
-
-    return threats.map((threat, index) => {
-        const answers = findThreatAnswers(threat, teamMembers);
-
-        return {
-            name: threat.name,
-            threatReason: threat.threatReason,
-            types: threat.types,
-            sprite: sprites[index],
-            offensiveAnswers: answers.offensive,
-            defensiveAnswers: answers.defensive,
-            covered: answers.offensive.length > 0 || answers.defensive.length > 0
-        };
-    });
-}
-
 function getPokemonCacheKey(pokemonName)
 {
     return `${POKEMON_CACHE_PREFIX}${pokemonName}`;
+}
+
+function getPokemonDetail(entry)
+{
+    const cached = localStorage.getItem(getPokemonCacheKey(entry.name));
+
+    if (cached)
+    {
+        console.count("CACHE HIT");
+        return Promise.resolve(JSON.parse(cached));
+    }
+
+    console.count("CACHE MISS (network fetch)");
+    return fetchAndCachePokemonDetail(entry);
 }
 
 async function fetchAndCachePokemonDetail(entry)
@@ -248,166 +293,15 @@ async function fetchAndCachePokemonDetail(entry)
     return data;
 }
 
-function getPokemonDetail(entry)
+// ---- Shared UI ----
+function showMessage(message, isError = false)
 {
-    const cached = localStorage.getItem(getPokemonCacheKey(entry.name));
+    const msg = document.createElement("p");
 
-    if (cached)
-    {
-        console.count("CACHE HIT");
-        return Promise.resolve(JSON.parse(cached));
-    }
-
-    console.count("CACHE MISS (network fetch)");
-    return fetchAndCachePokemonDetail(entry);
-}
-
-function toPokedexRow(data)
-{
-    const [hp, attack, defense, specialAttack, specialDefense, speed] = data.stats.map(stat => stat.base_stat);
-    return { ...normalizePokemon(data), hp, attack, defense, specialAttack, specialDefense, speed };
-}
-
-async function loadPokedexData()
-{
-    pokedexStatus.textContent = "Loading Pokemon...";
-
-    try
-    {
-        const listResponse = await fetch(`${POKE_API_BASE_URL}/pokemon?limit=${POKEDEX_SIZE}&offset=0`);
-        const entries = (await listResponse.json()).results;
-        pokedexData = [];
-
-        for (let i = 0; i < entries.length; i += POKEDEX_BATCH_SIZE)
-        {
-            const batch = entries.slice(i, i + POKEDEX_BATCH_SIZE);
-            const details = await Promise.all(batch.map(entry => getPokemonDetail(entry)));
-            pokedexData.push(...details.map(data => toPokedexRow(data)));
-
-            pokedexStatus.textContent = `Loading... ${pokedexData.length} of ${entries.length} Pokemon`;
-
-            visiblePokedexData = [...pokedexData];
-            sortVisiblePokedexData();
-            renderPokedexTable(visiblePokedexData);
-        }
-
-        pokedexStatus.textContent = `Showing ${pokedexData.length} Pokemon`;
-        pokedexSearch.addEventListener("input", event => filterPokedex(event.target.value));
-    }
-    catch (error)
-    {
-        pokedexStatus.textContent = "Failed to load Pokedex. Please refresh the page.";
-        console.warn("Pokedex load error: ", error);
-    }
-}
-
-function filterPokedex(query)
-{
-    const normalizedQuery = query.toLowerCase().trim();
-    visiblePokedexData = pokedexData.filter(pokemon => pokemon.name.includes(normalizedQuery));
-    sortVisiblePokedexData();
-    renderPokedexTable(visiblePokedexData);
-}
-
-function buildTextCell(text, className)
-{
-    const cell = document.createElement("td");
-    if (className) cell.className = className;
-    cell.textContent = text;
-    return cell;
-}
-
-function buildPokedexRow(pokemon)
-{
-    const row = document.createElement("tr");
-
-    const spriteCell = document.createElement("td");
-    const sprite = document.createElement("img");
-    sprite.src = pokemon.image;
-    sprite.alt = pokemon.name;
-    sprite.className = "pokedexSprite";
-    spriteCell.appendChild(sprite);
-
-    const typeCell = document.createElement("td");
-    typeCell.append(...pokemon.types.map(type => createTypeBadge(type)));
-
-    const statCells = POKEDEX_STAT_KEYS.map(key => buildTextCell(pokemon[key]));
-
-    const addCell = document.createElement("td");
-    const addButton = document.createElement("button");
-    const isOnTeam = team.some(member => member.name === pokemon.name);
-    addButton.className = "pokedexAddBtn";
-    addButton.textContent = isOnTeam ? "Added" : "Add";
-    addButton.disabled = isOnTeam;
-    addButton.addEventListener("click", () => {
-        currentPokemon = pokemon;
-        addToTeam();
-    });
-    addCell.appendChild(addButton);
-
-    row.append(
-        buildTextCell(`#${String(pokemon.id).padStart(3, "0")}`, "pokedexId"),
-        spriteCell,
-        buildTextCell(capitalize(pokemon.name), "pokedexName"),
-        typeCell,
-        ...statCells,
-        addCell
-    );
-    return row;
-}
-
-function buildEmptyPokedexRow()
-{
-    const cell = buildTextCell("No Pokemon found", "pokedexEmptyCell");
-    cell.colSpan = POKEDEX_COLUMN_COUNT;
-
-    const row = document.createElement("tr");
-    row.appendChild(cell);
-    return row;
-}
-
-function renderPokedexTable(rows)
-{
-    const tableRows = rows.length > 0 ? rows.map(pokemon => buildPokedexRow(pokemon)) : [buildEmptyPokedexRow()];
-    pokedexBody.replaceChildren(...tableRows);
-    pokedexStatus.textContent = `Showing ${rows.length} of ${pokedexData.length} Pokémon`;
-}
-
-function sortVisiblePokedexData()
-{
-    visiblePokedexData.sort((a, b) => {
-        if (typeof a[sortKey] === "string")
-        {
-            return sortDesc ? b[sortKey].localeCompare(a[sortKey]) : a[sortKey].localeCompare(b[sortKey]);
-        }
-        return sortDesc ? b[sortKey] - a[sortKey] : a[sortKey] - b[sortKey];
-    });
-}
-
-function toggleSort(key)
-{
-    if (sortKey === key)
-    {
-        sortDesc = !sortDesc;
-    }
-    else
-    {
-        sortKey = key;
-        sortDesc = false;
-    }
-
-    sortVisiblePokedexData();
-    updateSortIndicators();
-    renderPokedexTable(visiblePokedexData);
-}
-
-function updateSortIndicators()
-{
-    sortableHeaders.forEach(header => {
-        const isActive = header.dataset.key === sortKey;
-        header.classList.toggle("sorted", isActive);
-        header.classList.toggle("desc", isActive && sortDesc);
-    });
+    msg.textContent = message;
+    msg.className = isError ? "message error" : "message success";
+    pokemonDisplay.prepend(msg);
+    setTimeout(() => msg.remove(), MESSAGE_DURATION_MS);
 }
 
 function createTypeBadge(type)
@@ -424,6 +318,14 @@ function buildTypeContainer(types)
     container.className = "typeContainer";
     container.append(...types.map(type => createTypeBadge(type)));
     return container;
+}
+
+function buildStatBlock(stats)
+{
+    const block = document.createElement("div");
+    block.className = "statBlock";
+    block.append(...stats.map(stat => buildStatRow(stat)));
+    return block;
 }
 
 function buildStatRow(stat)
@@ -452,12 +354,61 @@ function buildStatRow(stat)
     return row;
 }
 
-function buildStatBlock(stats)
+// ---- Search ----
+async function searchPokemon()
 {
-    const block = document.createElement("div");
-    block.className = "statBlock";
-    block.append(...stats.map(stat => buildStatRow(stat)));
-    return block;
+    const query = normalizeSearchQuery(pokemonInput.value);
+
+    if (!query)
+    {
+        pokemonDisplay.innerHTML = `<p class="message error">Please enter a Pokémon name.</p>`;
+        return;
+    }
+
+    pokemonDisplay.innerHTML = `<p class="message">Searching...</p>`;
+
+    try
+    {
+        const data = await fetchPokemonByNameOrId(query);
+        if (!data)
+        {
+            currentPokemon = null;
+            pokemonDisplay.innerHTML = `<p class="message error">Pokémon not found. Please try again.</p>`;
+            return;
+        }
+
+        currentPokemon = normalizePokemon(data);
+        pokemonDisplay.replaceChildren(buildPokemonCard(currentPokemon));
+        pokemonInput.value = "";
+    }
+    catch (error)
+    {
+        currentPokemon = null;
+        console.warn("Search failed: ", error);
+        pokemonDisplay.innerHTML = `<p class="message error">Something went wrong while searching. Please try again.</p>`;
+    }
+}
+
+async function randomPokemon()
+{
+    const randomId = Math.floor(Math.random() * POKEDEX_SIZE) + 1;
+    pokemonInput.value = "";
+    pokemonDisplay.innerHTML = `<p class="message">Getting a random Pokémon...</p>`;
+
+    try
+    {
+        const response = await fetch(`${POKE_API_BASE_URL}/pokemon/${randomId}`);
+        if (!response.ok) throw new Error("Not found");
+        const data = await response.json();
+
+        currentPokemon = normalizePokemon(data);
+        pokemonDisplay.replaceChildren(buildPokemonCard(currentPokemon));
+    }
+    catch (error)
+    {
+        currentPokemon = null;
+        pokemonDisplay.innerHTML = `<p class="message error">Failed to get random Pokémon.</p>`;
+    }
 }
 
 function buildPokemonCard(pokemon)
@@ -483,6 +434,20 @@ function buildPokemonCard(pokemon)
 
     card.append(sprite, name, buildTypeContainer(pokemon.types), abilities, buildStatBlock(pokemon.stats), addButton);
     return card;
+}
+
+// ---- Team ----
+function displayTeam()
+{
+    displayWeaknessChart();
+
+    if (team.length === 0)
+    {
+        teamContainer.innerHTML = `<p class="emptyMessage">Your team is empty. Search for a Pokémon and add it to your team!</p>`;
+        return;
+    }
+
+    teamContainer.replaceChildren(...team.map((pokemon, index) => buildTeamCard(pokemon, index)));
 }
 
 function buildTeamCard(pokemon, index)
@@ -512,6 +477,140 @@ function buildTeamCard(pokemon, index)
         removeButton
     );
     return card;
+}
+
+function buildAbilityPicker(pokemon)
+{
+    const container = document.createElement("div");
+    container.className = "abilityText";
+
+    if (pokemon.abilities.length <= 1)
+    {
+        const onlyAbility = pokemon.abilities[0];
+        container.textContent = `Ability: ${onlyAbility ? formatAbilityOption(onlyAbility) : "Unknown"}`;
+        return container;
+    }
+
+    container.textContent = "Ability:";
+
+    const select = document.createElement("select");
+    select.className = "abilitySelect";
+    select.setAttribute("aria-label", `Ability for ${capitalize(pokemon.name)}`);
+
+    pokemon.abilities.forEach(ability => {
+        const option = document.createElement("option");
+        option.value = ability.name;
+        option.textContent = formatAbilityOption(ability);
+        option.selected = ability.name === pokemon.selectedAbility;
+        select.appendChild(option);
+    });
+
+    select.addEventListener("change", () => changeAbility(pokemon, select.value));
+    container.appendChild(select);
+    return container;
+}
+
+// Re-renders only the chart so the dropdown keeps focus; displayTeam() would rebuild every card.
+function changeAbility(pokemon, abilityName)
+{
+    pokemon.selectedAbility = abilityName;
+    displayWeaknessChart();
+    markThreatReportStale();
+    saveTeam();
+}
+
+function addToTeam()
+{
+    if (!currentPokemon) return;
+
+    if (team.length >= MAX_TEAM_SIZE)
+    {
+        showMessage("Your team is full! (Maximum 6 Pokémon)", true);
+        return;
+    }
+
+    const alreadyOnTeam = team.some(p => p.name === currentPokemon.name);
+    if (alreadyOnTeam)
+    {
+        showMessage(`${capitalize(currentPokemon.name)} is already on your team!`, true);
+        return;
+    }
+
+    team.push(createTeamMember(currentPokemon));
+    saveTeam();
+    displayTeam();
+    markThreatReportStale();
+    refreshPokedexTable();
+    showMessage(`${capitalize(currentPokemon.name)} added to your team!`);
+}
+
+function removeFromTeam(index)
+{
+    const removedPokemon = team[index];
+    team.splice(index, 1);
+    saveTeam();
+    displayTeam();
+    markThreatReportStale();
+    refreshPokedexTable();
+    showMessage(`${capitalize(removedPokemon.name)} removed from your team.`);
+}
+
+function exportTeamToShowdown()
+{
+    if (team.length === 0)
+    {
+        showMessage("Your team is empty! Add some Pokémon before exporting.", true);
+        return;
+    }
+
+    navigator.clipboard.writeText(generateShowdownText(team)).then(() => {
+        exportBtn.textContent = "Copied!";
+        exportBtn.classList.add("copied");
+        setTimeout(() => {
+            exportBtn.textContent = EXPORT_BUTTON_LABEL;
+            exportBtn.classList.remove("copied");
+        }, COPY_FEEDBACK_DURATION_MS);
+    }).catch(() => {
+        showMessage("Failed to copy to clipboard. Please try again.", true);
+    });
+}
+
+// ---- Type coverage chart ----
+function displayWeaknessChart()
+{
+    if (team.length === 0)
+    {
+        weaknessChart.innerHTML = `<p class="emptyMessage">Add Pokémon to your team to see type weaknesses!</p>`;
+        return;
+    }
+
+    const panel = document.createElement("div");
+    panel.className = "chartPanel";
+
+    const title = document.createElement("h3");
+    title.className = "chartTitle";
+    title.textContent = "Team Type Coverage";
+    panel.appendChild(title);
+
+    const table = document.createElement("table");
+    table.className = "coverageTable";
+    table.appendChild(buildCoverageHeader());
+
+    const body = document.createElement("tbody");
+    TYPE_ORDER.forEach(attackType => body.appendChild(buildCoverageRow(attackType)));
+    table.appendChild(body);
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "coverageWrapper";
+    wrapper.appendChild(table);
+    panel.appendChild(wrapper);
+
+    const legend = document.createElement("p");
+    legend.className = "coverageLegend";
+    legend.textContent = "Damage each member takes from each attacking type. * = changed by the member's ability (ignored by attackers with Mold Breaker and similar). Highlighted rows: more members weak than resistant.";
+    panel.appendChild(legend);
+
+    weaknessChart.replaceChildren(panel);
 }
 
 function buildCoverageHeader()
@@ -608,297 +707,58 @@ function buildCoverageRow(attackType)
     return row;
 }
 
-function displayWeaknessChart()
+// ---- Threat scanner ----
+async function scanForThreats()
 {
     if (team.length === 0)
     {
-        weaknessChart.innerHTML = `<p class="emptyMessage">Add Pokémon to your team to see type weaknesses!</p>`;
+        console.warn("Scan cannot be completed with empty team. Please add a Pokemon and try again.");
+        threatReport.innerHTML = `<p class="emptyMessage">Your team is empty! Add some Pokémon to scan for threats.</p>`;
         return;
     }
 
-    const panel = document.createElement("div");
-    panel.className = "chartPanel";
+    threatReport.innerHTML = `<p class="message">Scanning for threats...</p>`;
 
-    const title = document.createElement("h3");
-    title.className = "chartTitle";
-    title.textContent = "Team Type Coverage";
-    panel.appendChild(title);
-
-    const table = document.createElement("table");
-    table.className = "coverageTable";
-    table.appendChild(buildCoverageHeader());
-
-    const body = document.createElement("tbody");
-    TYPE_ORDER.forEach(attackType => body.appendChild(buildCoverageRow(attackType)));
-    table.appendChild(body);
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "coverageWrapper";
-    wrapper.appendChild(table);
-    panel.appendChild(wrapper);
-
-    const legend = document.createElement("p");
-    legend.className = "coverageLegend";
-    legend.textContent = "Damage each member takes from each attacking type. * = changed by the member's ability (ignored by attackers with Mold Breaker and similar). Highlighted rows: more members weak than resistant.";
-    panel.appendChild(legend);
-
-    weaknessChart.replaceChildren(panel);
+    const results = await checkTeamVulnerabilities(team, TOP_THREATS);
+    threatReport.replaceChildren(...results.map(result => buildThreatCard(result)));
 }
 
-function getStatColor(value)
+async function checkTeamVulnerabilities(teamMembers, threats)
 {
-    if (value >= 90) return "#48c048";
-    if (value >= 60) return "#f8d030";
-    return "#e63946";
+    const sprites = await Promise.all(threats.map(fetchThreatSprite));
+
+    return threats.map((threat, index) => {
+        const answers = findThreatAnswers(threat, teamMembers);
+
+        return {
+            name: threat.name,
+            threatReason: threat.threatReason,
+            types: threat.types,
+            sprite: sprites[index],
+            offensiveAnswers: answers.offensive,
+            defensiveAnswers: answers.defensive,
+            covered: answers.offensive.length > 0 || answers.defensive.length > 0
+        };
+    });
 }
 
-function formatAbilityOption(ability)
+// Offensive answers carry a type that hits the threat super effectively (a STAB move of that type).
+// Defensive answers resist or are immune to every one of the threat's STAB types.
+function findThreatAnswers(threat, teamMembers)
 {
-    const label = formatAbilityLabel(ability.name);
-    return ability.isHidden ? `${label} (Hidden)` : label;
+    const offensive = teamMembers.filter(pokemon => (pokemon.types || []).some(type => getTypeMultiplier(type, threat.types) >= 2));
+    const defensive = teamMembers.filter(pokemon => threat.types.every(type => getDamageTaken(type, pokemon) < 1));
+
+    return {
+        offensive: offensive.map(pokemon => pokemon.name),
+        defensive: defensive.map(pokemon => pokemon.name)
+    };
 }
 
 function markThreatReportStale()
 {
     if (!threatReport.hasChildNodes()) return;
     threatReport.innerHTML = `<p class="emptyMessage">Your team changed. Scan again to update threats.</p>`;
-}
-
-// Re-renders only the chart so the dropdown keeps focus; displayTeam() would rebuild every card.
-function changeAbility(pokemon, abilityName)
-{
-    pokemon.selectedAbility = abilityName;
-    displayWeaknessChart();
-    markThreatReportStale();
-    saveTeam();
-}
-
-function buildAbilityPicker(pokemon)
-{
-    const container = document.createElement("div");
-    container.className = "abilityText";
-
-    if (pokemon.abilities.length <= 1)
-    {
-        const onlyAbility = pokemon.abilities[0];
-        container.textContent = `Ability: ${onlyAbility ? formatAbilityOption(onlyAbility) : "Unknown"}`;
-        return container;
-    }
-
-    container.textContent = "Ability:";
-
-    const select = document.createElement("select");
-    select.className = "abilitySelect";
-    select.setAttribute("aria-label", `Ability for ${capitalize(pokemon.name)}`);
-
-    pokemon.abilities.forEach(ability => {
-        const option = document.createElement("option");
-        option.value = ability.name;
-        option.textContent = formatAbilityOption(ability);
-        option.selected = ability.name === pokemon.selectedAbility;
-        select.appendChild(option);
-    });
-
-    select.addEventListener("change", () => changeAbility(pokemon, select.value));
-    container.appendChild(select);
-    return container;
-}
-
-function displayTeam()
-{
-    displayWeaknessChart();
-
-    if (team.length === 0)
-    {
-        teamContainer.innerHTML = `<p class="emptyMessage">Your team is empty. Search for a Pokémon and add it to your team!</p>`;
-        return;
-    }
-
-    teamContainer.replaceChildren(...team.map((pokemon, index) => buildTeamCard(pokemon, index)));
-}
-
-// Team members are copies so choosing an ability never mutates the Pokédex row or search result they came from.
-function createTeamMember(pokemon)
-{
-    return {
-        id: pokemon.id,
-        name: pokemon.name,
-        showdownName: pokemon.showdownName,
-        types: [...pokemon.types],
-        image: pokemon.image,
-        abilities: pokemon.abilities.map(ability => ({ ...ability })),
-        stats: pokemon.stats.map(stat => ({ ...stat })),
-        selectedAbility: getDefaultAbility(pokemon.abilities)
-    };
-}
-
-function refreshPokedexTable()
-{
-    if (pokedexData.length === 0) return;
-    renderPokedexTable(visiblePokedexData);
-}
-
-function addToTeam()
-{
-    if (!currentPokemon) return;
-
-    if (team.length >= MAX_TEAM_SIZE)
-    {
-        showMessage("Your team is full! (Maximum 6 Pokémon)", true);
-        return;
-    }
-
-    const alreadyOnTeam = team.some(p => p.name === currentPokemon.name);
-    if (alreadyOnTeam)
-    {
-        showMessage(`${capitalize(currentPokemon.name)} is already on your team!`, true);
-        return;
-    }
-
-    team.push(createTeamMember(currentPokemon));
-    saveTeam();
-    displayTeam();
-    markThreatReportStale();
-    refreshPokedexTable();
-    showMessage(`${capitalize(currentPokemon.name)} added to your team!`);
-}
-
-function removeFromTeam(index)
-{
-    const removedPokemon = team[index];
-    team.splice(index, 1);
-    saveTeam();
-    displayTeam();
-    markThreatReportStale();
-    refreshPokedexTable();
-    showMessage(`${capitalize(removedPokemon.name)} removed from your team.`);
-}
-
-// Converts user input like "Mr. Mime", "Farfetch'd" or "Flabébé" into PokeAPI slugs (mr-mime, farfetchd, flabebe).
-function normalizeSearchQuery(input)
-{
-    return input
-        .normalize("NFD")
-        .replace(/[̀-ͯ]/g, "")
-        .replace("♀", "-f")
-        .replace("♂", "-m")
-        .toLowerCase()
-        .trim()
-        .replace(/[\s_]+/g, "-")
-        .replace(/[^a-z0-9-]/g, "")
-        .replace(/-+/g, "-")
-        .replace(/^-|-$/g, "");
-}
-
-// PokeAPI's /pokemon endpoint only knows form names (giratina-altered), so species names (giratina)
-// fall back to /pokemon-species and resolve to its default variety. Returns null when nothing matches.
-async function fetchPokemonByNameOrId(query)
-{
-    const response = await fetch(`${POKE_API_BASE_URL}/pokemon/${query}`);
-    if (response.ok) return response.json();
-    if (response.status !== 404) throw new Error(`PokeAPI returned ${response.status}`);
-
-    const speciesResponse = await fetch(`${POKE_API_BASE_URL}/pokemon-species/${query}`);
-    if (speciesResponse.status === 404) return null;
-    if (!speciesResponse.ok) throw new Error(`PokeAPI returned ${speciesResponse.status}`);
-
-    const species = await speciesResponse.json();
-    const defaultVariety = species.varieties.find(variety => variety.is_default);
-    if (!defaultVariety) return null;
-
-    const varietyResponse = await fetch(defaultVariety.pokemon.url);
-    if (!varietyResponse.ok) throw new Error(`PokeAPI returned ${varietyResponse.status}`);
-    return varietyResponse.json();
-}
-
-async function searchPokemon()
-{
-    const query = normalizeSearchQuery(pokemonInput.value);
-
-    if (!query)
-    {
-        pokemonDisplay.innerHTML = `<p class="message error">Please enter a Pokémon name.</p>`;
-        return;
-    }
-
-    pokemonDisplay.innerHTML = `<p class="message">Searching...</p>`;
-
-    try
-    {
-        const data = await fetchPokemonByNameOrId(query);
-        if (!data)
-        {
-            currentPokemon = null;
-            pokemonDisplay.innerHTML = `<p class="message error">Pokémon not found. Please try again.</p>`;
-            return;
-        }
-
-        currentPokemon = normalizePokemon(data);
-        pokemonDisplay.replaceChildren(buildPokemonCard(currentPokemon));
-        pokemonInput.value = "";
-    }
-    catch (error)
-    {
-        currentPokemon = null;
-        console.warn("Search failed: ", error);
-        pokemonDisplay.innerHTML = `<p class="message error">Something went wrong while searching. Please try again.</p>`;
-    }
-}
-
-async function randomPokemon()
-{
-    const randomId = Math.floor(Math.random() * POKEDEX_SIZE) + 1;
-    pokemonInput.value = "";
-    pokemonDisplay.innerHTML = `<p class="message">Getting a random Pokémon...</p>`;
-
-    try
-    {
-        const response = await fetch(`${POKE_API_BASE_URL}/pokemon/${randomId}`);
-        if (!response.ok) throw new Error("Not found");
-        const data = await response.json();
-
-        currentPokemon = normalizePokemon(data);
-        pokemonDisplay.replaceChildren(buildPokemonCard(currentPokemon));
-    }
-    catch (error)
-    {
-        currentPokemon = null;
-        pokemonDisplay.innerHTML = `<p class="message error">Failed to get random Pokémon.</p>`;
-    }
-}
-
-function exportTeamToShowdown()
-{
-    if (team.length === 0)
-    {
-        showMessage("Your team is empty! Add some Pokémon before exporting.", true);
-        return;
-    }
-
-    navigator.clipboard.writeText(generateShowdownText(team)).then(() => {
-        exportBtn.textContent = "Copied!";
-        exportBtn.classList.add("copied");
-        setTimeout(() => {
-            exportBtn.textContent = EXPORT_BUTTON_LABEL;
-            exportBtn.classList.remove("copied");
-        }, COPY_FEEDBACK_DURATION_MS);
-    }).catch(() => {
-        showMessage("Failed to copy to clipboard. Please try again.", true);
-    });
-}
-
-function buildThreatAnswerLine(label, pokemonNames)
-{
-    const line = document.createElement("p");
-    line.className = "threatAnswer";
-
-    const labelEl = document.createElement("span");
-    labelEl.className = "threatAnswerLabel";
-    labelEl.textContent = `${label}: `;
-    line.appendChild(labelEl);
-
-    line.append(pokemonNames.length > 0 ? pokemonNames.map(capitalize).join(", ") : "None");
-    return line;
 }
 
 function buildThreatCard(result)
@@ -938,21 +798,176 @@ function buildThreatCard(result)
     return card;
 }
 
-async function scanForThreats()
+function buildThreatAnswerLine(label, pokemonNames)
 {
-    if (team.length === 0)
-    {
-        console.warn("Scan cannot be completed with empty team. Please add a Pokemon and try again.");
-        threatReport.innerHTML = `<p class="emptyMessage">Your team is empty! Add some Pokémon to scan for threats.</p>`;
-        return;
-    }
+    const line = document.createElement("p");
+    line.className = "threatAnswer";
 
-    threatReport.innerHTML = `<p class="message">Scanning for threats...</p>`;
+    const labelEl = document.createElement("span");
+    labelEl.className = "threatAnswerLabel";
+    labelEl.textContent = `${label}: `;
+    line.appendChild(labelEl);
 
-    const results = await checkTeamVulnerabilities(team, TOP_THREATS);
-    threatReport.replaceChildren(...results.map(result => buildThreatCard(result)));
+    line.append(pokemonNames.length > 0 ? pokemonNames.map(capitalize).join(", ") : "None");
+    return line;
 }
 
+// ---- Pokédex ----
+async function loadPokedexData()
+{
+    pokedexStatus.textContent = "Loading Pokemon...";
+
+    try
+    {
+        const listResponse = await fetch(`${POKE_API_BASE_URL}/pokemon?limit=${POKEDEX_SIZE}&offset=0`);
+        const entries = (await listResponse.json()).results;
+        pokedexData = [];
+
+        for (let i = 0; i < entries.length; i += POKEDEX_BATCH_SIZE)
+        {
+            const batch = entries.slice(i, i + POKEDEX_BATCH_SIZE);
+            const details = await Promise.all(batch.map(entry => getPokemonDetail(entry)));
+            pokedexData.push(...details.map(data => toPokedexRow(data)));
+
+            pokedexStatus.textContent = `Loading... ${pokedexData.length} of ${entries.length} Pokemon`;
+
+            visiblePokedexData = [...pokedexData];
+            sortVisiblePokedexData();
+            renderPokedexTable(visiblePokedexData);
+        }
+
+        pokedexStatus.textContent = `Showing ${pokedexData.length} Pokemon`;
+        pokedexSearch.addEventListener("input", event => filterPokedex(event.target.value));
+    }
+    catch (error)
+    {
+        pokedexStatus.textContent = "Failed to load Pokedex. Please refresh the page.";
+        console.warn("Pokedex load error: ", error);
+    }
+}
+
+function toPokedexRow(data)
+{
+    const [hp, attack, defense, specialAttack, specialDefense, speed] = data.stats.map(stat => stat.base_stat);
+    return { ...normalizePokemon(data), hp, attack, defense, specialAttack, specialDefense, speed };
+}
+
+function filterPokedex(query)
+{
+    const normalizedQuery = query.toLowerCase().trim();
+    visiblePokedexData = pokedexData.filter(pokemon => pokemon.name.includes(normalizedQuery));
+    sortVisiblePokedexData();
+    renderPokedexTable(visiblePokedexData);
+}
+
+function toggleSort(key)
+{
+    if (sortKey === key)
+    {
+        sortDesc = !sortDesc;
+    }
+    else
+    {
+        sortKey = key;
+        sortDesc = false;
+    }
+
+    sortVisiblePokedexData();
+    updateSortIndicators();
+    renderPokedexTable(visiblePokedexData);
+}
+
+function sortVisiblePokedexData()
+{
+    visiblePokedexData.sort((a, b) => {
+        if (typeof a[sortKey] === "string")
+        {
+            return sortDesc ? b[sortKey].localeCompare(a[sortKey]) : a[sortKey].localeCompare(b[sortKey]);
+        }
+        return sortDesc ? b[sortKey] - a[sortKey] : a[sortKey] - b[sortKey];
+    });
+}
+
+function updateSortIndicators()
+{
+    sortableHeaders.forEach(header => {
+        const isActive = header.dataset.key === sortKey;
+        header.classList.toggle("sorted", isActive);
+        header.classList.toggle("desc", isActive && sortDesc);
+    });
+}
+
+function refreshPokedexTable()
+{
+    if (pokedexData.length === 0) return;
+    renderPokedexTable(visiblePokedexData);
+}
+
+function renderPokedexTable(rows)
+{
+    const tableRows = rows.length > 0 ? rows.map(pokemon => buildPokedexRow(pokemon)) : [buildEmptyPokedexRow()];
+    pokedexBody.replaceChildren(...tableRows);
+    pokedexStatus.textContent = `Showing ${rows.length} of ${pokedexData.length} Pokémon`;
+}
+
+function buildPokedexRow(pokemon)
+{
+    const row = document.createElement("tr");
+
+    const spriteCell = document.createElement("td");
+    const sprite = document.createElement("img");
+    sprite.src = pokemon.image;
+    sprite.alt = pokemon.name;
+    sprite.className = "pokedexSprite";
+    spriteCell.appendChild(sprite);
+
+    const typeCell = document.createElement("td");
+    typeCell.append(...pokemon.types.map(type => createTypeBadge(type)));
+
+    const statCells = POKEDEX_STAT_KEYS.map(key => buildTextCell(pokemon[key]));
+
+    const addCell = document.createElement("td");
+    const addButton = document.createElement("button");
+    const isOnTeam = team.some(member => member.name === pokemon.name);
+    addButton.className = "pokedexAddBtn";
+    addButton.textContent = isOnTeam ? "Added" : "Add";
+    addButton.disabled = isOnTeam;
+    addButton.addEventListener("click", () => {
+        currentPokemon = pokemon;
+        addToTeam();
+    });
+    addCell.appendChild(addButton);
+
+    row.append(
+        buildTextCell(`#${String(pokemon.id).padStart(3, "0")}`, "pokedexId"),
+        spriteCell,
+        buildTextCell(capitalize(pokemon.name), "pokedexName"),
+        typeCell,
+        ...statCells,
+        addCell
+    );
+    return row;
+}
+
+function buildEmptyPokedexRow()
+{
+    const cell = buildTextCell("No Pokemon found", "pokedexEmptyCell");
+    cell.colSpan = POKEDEX_COLUMN_COUNT;
+
+    const row = document.createElement("tr");
+    row.appendChild(cell);
+    return row;
+}
+
+function buildTextCell(text, className)
+{
+    const cell = document.createElement("td");
+    if (className) cell.className = className;
+    cell.textContent = text;
+    return cell;
+}
+
+// ---- Startup ----
 function bindEventListeners()
 {
     searchBtn.addEventListener("click", searchPokemon);
