@@ -1,4 +1,35 @@
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+:root {
+    --navy-900: #1a1f3a;
+    --navy-800: #1a2a5e;
+    --navy-700: #2a3a6e;
+    --blue-500: #6a8ac8;
+    --blue-400: #8aaad0;
+    --blue-200: #b8cfe9;
+    --panel: #dce8f5;
+    --row-hover: #c8dff0;
+    --surface: #f0f4ff;
+    --muted-text: #b8cfe8;
+    --white: #ffffff;
+
+    --yellow: #f8d030;
+    --yellow-dark: #e8c020;
+    --green: #48c048;
+    --green-dark: #38a038;
+    --red: #e63946;
+    --red-dark: #c02020;
+
+    --weak-red: #b01e2a;
+    --resist-green: #1f6a1f;
+    --covered-border: #2a7a2a;
+    --success-bg: #d4f0d4;
+    --success-text: #1a6a1a;
+    --error-bg: #f0d4d4;
+    --error-text: #6a1a1a;
+    --badge-dark-text: #333;
+
+    --font-pixel: 'Press Start 2P', monospace;
+    --font-body: 'VT323', monospace;
+}
 
 * {
     box-sizing: border-box;
@@ -8,8 +39,8 @@
 
 body {
     font-family: 'VT323', Tahoma, monospace;
-    background-color: #1a1f3a;
-    color: #1a1f3a;
+    background-color: var(--navy-900);
+    color: var(--navy-900);
     min-height: 100vh;
     padding: 20px;
     font-size: 18px;
@@ -19,15 +50,15 @@ header {
     text-align: center;
     margin-bottom: 24px;
     padding: 20px;
-    background-color: #2a3a6e;
-    border: 4px solid #f8d030;
+    background-color: var(--navy-700);
+    border: 4px solid var(--yellow);
     border-radius: 10px;
 }
 
 .site-title {
-    font-family: 'Press Start 2P', monospace;
+    font-family: var(--font-pixel);
     font-size: 1.4rem;
-    color: #f0f4ff;
+    color: var(--surface);
     letter-spacing: 2px;
 }
 
@@ -38,82 +69,79 @@ header {
     flex-wrap: wrap;
     margin-bottom: 24px;
     padding: 16px;
-    background-color: #2a3a6e;
-    border: 3px solid #6a8ac8;
+    background-color: var(--navy-700);
+    border: 3px solid var(--blue-500);
     border-radius: 8px;
 }
 
 .searchSection input {
-    font-family: 'VT323', monospace;
+    font-family: var(--font-body);
     padding: 8px 14px;
     font-size: 1.2rem;
-    background-color: #f0f4ff;
-    border: 3px solid #6a8ac8;
+    background-color: var(--surface);
+    border: 3px solid var(--blue-500);
     border-radius: 6px;
-    color: #1a1f3a;
+    color: var(--navy-900);
     width: 240px;
     outline: none;
 }
 
 .searchSection input:focus {
-    border-color: #f8d030;
+    border-color: var(--yellow);
 }
 
 .searchSection input::placeholder {
-    color: #8aaad0;
+    color: var(--blue-400);
 }
 
 button {
-    font-family: 'Press Start 2P', monospace;
+    font-family: var(--font-pixel);
     font-size: 0.55rem;
     padding: 10px 14px;
-    border: 3px solid #1a1f3a;
+    border: 3px solid var(--navy-900);
     border-radius: 6px;
     cursor: pointer;
-    box-shadow: 3px 3px 0 #1a1f3a;
+    box-shadow: 3px 3px 0 var(--navy-900);
     letter-spacing: 1px;
 }
 
 button:active {
     transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0 #1a1f3a;
+    box-shadow: 1px 1px 0 var(--navy-900);
 }
 
 #searchBtn {
-    background-color: #f8d030;
-    color: #1a1f3a;
-}
-
-#searchBtn:hover {
-    background-color: #f8d030;
-    color: #1a1f3a;
+    background-color: var(--yellow);
+    color: var(--navy-900);
 }
 
 #randomBtn {
-    background-color: #48c048;
-    color: white;
+    background-color: var(--green);
+    color: var(--white);
 }
 
 #randomBtn:hover {
-    background-color: #38a038;
+    background-color: var(--green-dark);
 }
 
-.exportBtn {
+.exportBtn,
+.scanBtn {
     display: block;
     margin: 0 auto 16px auto;
-    background-color: #2a3a6e;
-    color: #f0f4ff;
-    border: 3px solid #f8d030;
+    background-color: var(--navy-700);
+    color: var(--surface);
+    border: 3px solid var(--yellow);
 }
 
-.exportBtn:hover {
-    background-color: #1a2a5e;
+.exportBtn:hover,
+.scanBtn:hover {
+    background-color: var(--navy-800);
 }
 
 .exportBtn.copied {
-    background-color: #48c048;
-    border-color: #48c048;
-    color: white;
+    background-color: var(--green);
+    border-color: var(--green);
+    color: var(--white);
 }
 
 #pokemonDisplay {
@@ -123,20 +151,20 @@ button:active {
 }
 
 .pokemonCard {
-    background-color: #dce8f5;
-    border: 3px solid #6a8ac8;
+    background-color: var(--panel);
+    border: 3px solid var(--blue-500);
     border-radius: 8px;
-    box-shadow: 4px 4px 0 #8aaad0;
+    box-shadow: 4px 4px 0 var(--blue-400);
     padding: 20px;
     text-align: center;
     width: 300px;
 }
 
 .pokemonCard h2 {
-    font-family: 'Press Start 2P', monospace;
+    font-family: var(--font-pixel);
     font-size: 0.8rem;
     margin-bottom: 10px;
-    color: #1a1f3a;
+    color: var(--navy-900);
 }
 
 .pokemonCard img {
@@ -145,7 +173,7 @@ button:active {
 }
 
 .pokemonCard #addBtn:hover {
-    background-color: #e8c020;
+    background-color: var(--yellow-dark);
 }
 
 .teamSection {
@@ -153,9 +181,9 @@ button:active {
 }
 
 .teamSection h2 {
-    font-family: 'Press Start 2P', monospace;
+    font-family: var(--font-pixel);
     font-size: 0.8rem;
-    color: #f0f4ff;
+    color: var(--surface);
     margin-bottom: 16px;
     letter-spacing: 2px;
     text-align: center;
@@ -169,10 +197,10 @@ button:active {
 }
 
 .teamCard {
-    background-color: #dce8f5;
-    border: 3px solid #6a8ac8;
+    background-color: var(--panel);
+    border: 3px solid var(--blue-500);
     border-radius: 8px;
-    box-shadow: 4px 4px 0 #8aaad0;
+    box-shadow: 4px 4px 0 var(--blue-400);
     padding: 16px;
     text-align: center;
     width: 200px;
@@ -184,16 +212,16 @@ button:active {
 }
 
 .pokemon-name {
-    font-family: 'Press Start 2P', monospace;
+    font-family: var(--font-pixel);
     font-size: 0.55rem;
     margin: 8px 0;
-    color: #1a1f3a;
+    color: var(--navy-900);
     line-height: 1.6;
 }
 
 .ability-text {
     font-size: 0.95rem;
-    color: #2a3a6e;
+    color: var(--navy-700);
     margin: 4px 0 8px 0;
 }
 
@@ -202,28 +230,28 @@ button:active {
     width: 100%;
     margin-top: 4px;
     padding: 2px 4px;
-    font-family: 'VT323', monospace;
+    font-family: var(--font-body);
     font-size: 1rem;
-    color: #1a1f3a;
-    background-color: #f0f4ff;
-    border: 2px solid #6a8ac8;
+    color: var(--navy-900);
+    background-color: var(--surface);
+    border: 2px solid var(--blue-500);
     border-radius: 4px;
 }
 
 .abilitySelect:focus {
     outline: none;
-    border-color: #f8d030;
+    border-color: var(--yellow);
 }
 
 .remove-btn {
-    background-color: #e63946;
-    color: white;
+    background-color: var(--red);
+    color: var(--white);
     width: 100%;
     margin-top: 8px;
 }
 
 .remove-btn:hover {
-    background-color: #c02020;
+    background-color: var(--red-dark);
 }
 
 .type-container, .typeContainer {
@@ -235,12 +263,12 @@ button:active {
 }
 
 .typeBadge {
-    font-family: 'Press Start 2P', monospace;
+    font-family: var(--font-pixel);
     font-size: 0.4rem;
     padding: 4px 8px;
     border-radius: 4px;
     border: 2px solid rgba(0, 0, 0, 0.2);
-    color: white;
+    color: var(--white);
     letter-spacing: 1px;
 }
 
@@ -259,9 +287,9 @@ button:active {
 }
 
 .statLabel {
-    font-family: 'Press Start 2P', monospace;
+    font-family: var(--font-pixel);
     font-size: 0.7rem;
-    color: #1a1f3a;
+    color: var(--navy-900);
     width: 80px;
     flex-shrink: 0;
     text-align: right;
@@ -270,22 +298,21 @@ button:active {
 .statBarBg {
     flex: 1;
     height: 10px;
-    background-color: #b8cfe9;
+    background-color: var(--blue-200);
     border-radius: 2px;
-    transition: width 0.4s ease;
 }
 
 .statBarFill {
     height: 100%;
-    background-color: #48c048;
+    background-color: var(--green);
     border-radius: 2px;
     transition: width 0.4s ease;
 }
 
 .statValue {
-    font-family: 'Press Start 2P', monospace;
+    font-family: var(--font-pixel);
     font-size: 0.6rem;
-    color: #1a1f3a;
+    color: var(--navy-900);
     width: 24px;
     text-align: right;
     flex-shrink: 0;
@@ -296,17 +323,17 @@ button:active {
 }
 
 .chartPanel {
-    background-color: #dce8f5;
-    border: 3px solid #6a8ac8;
+    background-color: var(--panel);
+    border: 3px solid var(--blue-500);
     border-radius: 8px;
-    box-shadow: 4px 4px 0 #8aaad0;
+    box-shadow: 4px 4px 0 var(--blue-400);
     padding: 16px;
 }
 
 .chartTitle {
-    font-family: 'Press Start 2P', monospace;
+    font-family: var(--font-pixel);
     font-size: 0.65rem;
-    color: #1a1f3a;
+    color: var(--navy-900);
     margin-bottom: 12px;
     letter-spacing: 2px;
 }
@@ -318,7 +345,7 @@ button:active {
 .coverageTable {
     width: 100%;
     border-collapse: collapse;
-    font-family: 'VT323', monospace;
+    font-family: var(--font-body);
     font-size: 1.3rem;
 }
 
@@ -326,15 +353,15 @@ button:active {
 .coverageTable td {
     padding: 2px 4px;
     text-align: center;
-    border-bottom: 1px solid #b8cfe9;
+    border-bottom: 1px solid var(--blue-200);
 }
 
 .coverageTable thead th {
-    font-family: 'Press Start 2P', monospace;
+    font-family: var(--font-pixel);
     font-size: 0.4rem;
-    color: #1a1f3a;
+    color: var(--navy-900);
     vertical-align: bottom;
-    border-bottom: 2px solid #6a8ac8;
+    border-bottom: 2px solid var(--blue-500);
 }
 
 .coverageTable tbody th {
@@ -351,28 +378,28 @@ button:active {
 }
 
 .coverageCount {
-    color: #1a1f3a;
+    color: var(--navy-900);
 }
 
 .coverageWeakCount {
-    border-left: 2px solid #6a8ac8;
+    border-left: 2px solid var(--blue-500);
 }
 
 .coverageExposed th,
 .coverageExposed td {
-    background-color: #f0d4d4;
+    background-color: var(--error-bg);
 }
 
-.multNeutral { color: #8aaad0; }
-.multWeak { color: #b01e2a; }
-.multQuadWeak { color: #ffffff; background-color: #b01e2a; }
-.multResist { color: #1f6a1f; }
-.multQuadResist { color: #ffffff; background-color: #1f6a1f; }
-.multImmune { color: #ffffff; background-color: #2a3a6e; }
+.multNeutral { color: var(--blue-400); }
+.multWeak { color: var(--weak-red); }
+.multQuadWeak { color: var(--white); background-color: var(--weak-red); }
+.multResist { color: var(--resist-green); }
+.multQuadResist { color: var(--white); background-color: var(--resist-green); }
+.multImmune { color: var(--white); background-color: var(--navy-700); }
 
-.coverageExposed .multQuadWeak { background-color: #b01e2a; }
-.coverageExposed .multQuadResist { background-color: #1f6a1f; }
-.coverageExposed .multImmune { background-color: #2a3a6e; }
+.coverageExposed .multQuadWeak { background-color: var(--weak-red); }
+.coverageExposed .multQuadResist { background-color: var(--resist-green); }
+.coverageExposed .multImmune { background-color: var(--navy-700); }
 
 .abilityMarker {
     font-size: 0.8em;
@@ -381,12 +408,12 @@ button:active {
 
 .coverageLegend {
     font-size: 1rem;
-    color: #2a3a6e;
+    color: var(--navy-700);
     margin-top: 8px;
 }
 
 .message {
-    font-family: 'VT323', monospace;
+    font-family: var(--font-body);
     font-size: 1.1rem;
     padding: 10px 14px;
     border-radius: 6px;
@@ -394,35 +421,23 @@ button:active {
 }
 
 .message.success {
-    background-color: #d4f0d4;
-    color: #1a6a1a;
+    background-color: var(--success-bg);
+    color: var(--success-text);
 }
 
 .message.error {
-    background-color: #f0d4d4;
-    color: #6a1a1a;
+    background-color: var(--error-bg);
+    color: var(--error-text);
 }
 
 .emptyMessage {
-    color: #b8cfe8;
+    color: var(--muted-text);
     text-align: center;
     font-size: 1.5rem;
 }
 
 .threatSection {
     margin-top: 24px;
-}
-
-.scanBtn {
-    display: block;
-    margin: 0 auto 16px auto;
-    background-color: #2a3a6e;
-    color: #f0f4ff;
-    border: 3px solid #f8d030;
-}
-
-.scanBtn:hover {
-    background-color: #1a2a5e;
 }
 
 #threatReport {
@@ -434,51 +449,51 @@ button:active {
 }
 
 .threatCard {
-    background-color: #dce8f5;
+    background-color: var(--panel);
     border-radius: 8px;
-    box-shadow: 4px 4px 0 #8aaad0;
+    box-shadow: 4px 4px 0 var(--blue-400);
     padding: 16px;
     width: 250px;
     text-align: center;
 }
 
 .threatCard.danger {
-    border: 3px solid #e63946;
+    border: 3px solid var(--red);
 }
 
 .threatCard.covered {
-    border: 3px solid #2a7a2a;
+    border: 3px solid var(--covered-border);
 }
 
 .threatName {
-    font-family: 'Press Start 2P', monospace;
+    font-family: var(--font-pixel);
     font-size: 0.55rem;
-    color: #1a1f3a;
+    color: var(--navy-900);
     margin-bottom: 8px;
     line-height: 1.6;
 }
 
 .threatReason {
-    font-family: 'VT323', monospace;
+    font-family: var(--font-body);
     font-size: 0.9rem;
-    color: #2a3a6e;
+    color: var(--navy-700);
     margin-bottom: 8px;
 }
 
 .threatAnswer {
-    font-family: 'VT323', monospace;
+    font-family: var(--font-body);
     font-size: 1rem;
-    color: #1a1f3a;
+    color: var(--navy-900);
     text-align: left;
     margin-bottom: 4px;
 }
 
 .threatAnswerLabel {
-    color: #2a3a6e;
+    color: var(--navy-700);
 }
 
 .threatStatus {
-    font-family: 'Press Start 2P', monospace;
+    font-family: var(--font-pixel);
     font-size: 0.55rem;
     margin-top: 8px;
     padding: 4px 8px;
@@ -487,13 +502,13 @@ button:active {
 }
 
 .threatStatus.danger {
-    background-color: #f0d4d4;
-    color: #e63946;
+    background-color: var(--error-bg);
+    color: var(--red);
 }
 
 .threatStatus.covered {
-    background-color: #d4f0d4;
-    color: #1a6a1a;
+    background-color: var(--success-bg);
+    color: var(--success-text);
 }
 
 .threatSprite {
@@ -502,35 +517,35 @@ button:active {
 }
 
 .pokedexSearchInput {
-    font-family: 'VT323', monospace;
+    font-family: var(--font-body);
     font-size: 1.2rem;
     padding: 8px 14px;
-    background-color: #f0f4ff;
-    border: 3px solid #6a8ac8;
+    background-color: var(--surface);
+    border: 3px solid var(--blue-500);
     border-radius: 6px;
-    color: #1a1f3a;
+    color: var(--navy-900);
     outline: none;
     width: 100%;
     margin-bottom: 12px;
 }
 
 .pokedexSearchInput:focus {
-    border-color: #f8d030;
+    border-color: var(--yellow);
 }
 
 .tableWrapper {
     overflow-x: auto;
     overflow-y: auto;
     max-height: 500px;
-    border: 3px solid #6a8ac8;
+    border: 3px solid var(--blue-500);
     border-radius: 8px;
-    box-shadow: 4px 4px 0 #8aaad0;
+    box-shadow: 4px 4px 0 var(--blue-400);
 }
 
 #pokedexTable {
     width: 100%;
     border-collapse: collapse;
-    font-family: 'VT323', monospace;
+    font-family: var(--font-body);
     font-size: 1.1rem;
 }
 
@@ -541,11 +556,11 @@ button:active {
 }
 
 #pokedexTable th {
-    background-color: #2a3a6e;
-    color: #f0f4ff;
+    background-color: var(--navy-700);
+    color: var(--surface);
     padding: 10px 12px;
     text-align: left;
-    font-family: 'Press Start 2P', monospace;
+    font-family: var(--font-pixel);
     font-size: 0.4rem;
     letter-spacing: 1px;
     white-space: nowrap;
@@ -557,32 +572,32 @@ button:active {
 }
 
 #pokedexTable th.sortable:hover {
-    background-color: #1a2a5e;
+    background-color: var(--navy-800);
 }
 
 #pokedexTable th.sorted::after {
     content: " ▲";
 }
 
-#pokedexTable th.sorted.desc::after { 
-    content: " ▼"; 
+#pokedexTable th.sorted.desc::after {
+    content: " ▼";
 }
 
-#pokedexTable tbody tr:nth-child(even) td { 
-    background-color: #dce8f5; 
+#pokedexTable tbody tr:nth-child(even) td {
+    background-color: var(--panel);
 }
 
-#pokedexTable tbody tr:nth-child(odd) td { 
-    background-color: #f0f4ff; 
+#pokedexTable tbody tr:nth-child(odd) td {
+    background-color: var(--surface);
 }
 
-#pokedexTable tbody tr:hover td { 
-    background-color: #c8dff0; 
+#pokedexTable tbody tr:hover td {
+    background-color: var(--row-hover);
 }
 
 #pokedexTable td {
     padding: 6px 12px;
-    color: #1a1f3a;
+    color: var(--navy-900);
     white-space: nowrap;
     vertical-align: middle;
 }
@@ -595,63 +610,63 @@ button:active {
 }
 
 .pokedexId {
-    font-family: 'Press Start 2P', monospace;
+    font-family: var(--font-pixel);
     font-size: 0.45rem;
-    color: #6a8ac8;
+    color: var(--blue-500);
 }
 
 .pokedexName {
-    font-family: 'Press Start 2P', monospace;
+    font-family: var(--font-pixel);
     font-size: 0.45rem;
 }
 
 .pokedexAddBtn {
-    font-family: 'Press Start 2P', monospace;
     font-size: 0.35rem;
     padding: 5px 8px;
-    background-color: #f8d030;
-    color: #1a1f3a;
-    border: 2px solid #1a1f3a;
+    background-color: var(--yellow);
+    color: var(--navy-900);
+    border: 2px solid var(--navy-900);
     border-radius: 4px;
-    cursor: pointer;
-    box-shadow: 2px 2px 0 #1a1f3a;
+    box-shadow: 2px 2px 0 var(--navy-900);
 }
 
-.pokedexAddBtn:hover { background-color: #e8c020; }
+.pokedexAddBtn:hover {
+    background-color: var(--yellow-dark);
+}
 
 .pokedexAddBtn:disabled {
-    background-color: #48c048;
-    color: white;
+    background-color: var(--green);
+    color: var(--white);
     cursor: not-allowed;
     box-shadow: none;
-    border-color: #48c048;
+    border-color: var(--green);
 }
 
 .pokedexStatus {
     text-align: center;
-    color: #b8cfe8;
+    color: var(--muted-text);
     font-size: 1rem;
     margin-top: 8px;
 }
 
-.type-fire     { background-color: #F08030; }
-.type-water    { background-color: #6890F0; }
-.type-grass    { background-color: #78C850; }
-.type-electric { background-color: #F8D030; color: #333; }
-.type-psychic  { background-color: #F85888; }
-.type-ice      { background-color: #98D8D8; color: #333; }
-.type-dragon   { background-color: #7038F8; }
+.type-fire     { background-color: #f08030; }
+.type-water    { background-color: #6890f0; }
+.type-grass    { background-color: #78c850; }
+.type-electric { background-color: #f8d030; color: var(--badge-dark-text); }
+.type-psychic  { background-color: #f85888; }
+.type-ice      { background-color: #98d8d8; color: var(--badge-dark-text); }
+.type-dragon   { background-color: #7038f8; }
 .type-dark     { background-color: #705848; }
-.type-fairy    { background-color: #EE99AC; color: #333; }
-.type-normal   { background-color: #A8A878; }
-.type-fighting { background-color: #C03028; }
-.type-flying   { background-color: #A890F0; }
-.type-poison   { background-color: #A040A0; }
-.type-ground   { background-color: #E0C068; color: #333; }
-.type-rock     { background-color: #B8A038; }
-.type-bug      { background-color: #A8B820; }
+.type-fairy    { background-color: #ee99ac; color: var(--badge-dark-text); }
+.type-normal   { background-color: #a8a878; }
+.type-fighting { background-color: #c03028; }
+.type-flying   { background-color: #a890f0; }
+.type-poison   { background-color: #a040a0; }
+.type-ground   { background-color: #e0c068; color: var(--badge-dark-text); }
+.type-rock     { background-color: #b8a038; }
+.type-bug      { background-color: #a8b820; }
 .type-ghost    { background-color: #705898; }
-.type-steel    { background-color: #B8B8D0; color: #333; }
+.type-steel    { background-color: #b8b8d0; color: var(--badge-dark-text); }
 
 @media (max-width: 600px) {
     .site-title {
