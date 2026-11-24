@@ -867,16 +867,15 @@ async function randomPokemon()
     }
 }
 
-exportBtn.addEventListener("click", () => {
+function exportTeamToShowdown()
+{
     if (team.length === 0)
     {
         showMessage("Your team is empty! Add some Pokémon before exporting.", true);
         return;
     }
 
-    const showdownText = generateShowdownText(team);
-
-    navigator.clipboard.writeText(showdownText).then(() => {
+    navigator.clipboard.writeText(generateShowdownText(team)).then(() => {
         exportBtn.textContent = "Copied!";
         exportBtn.classList.add("copied");
         setTimeout(() => {
@@ -886,7 +885,7 @@ exportBtn.addEventListener("click", () => {
     }).catch(() => {
         showMessage("Failed to copy to clipboard. Please try again.", true);
     });
-});
+}
 
 function buildThreatAnswerLine(label, pokemonNames)
 {
@@ -902,7 +901,45 @@ function buildThreatAnswerLine(label, pokemonNames)
     return line;
 }
 
-scanBtn.addEventListener("click", async () => {
+function buildThreatCard(result)
+{
+    const card = document.createElement("div");
+    card.className = result.covered ? "threatCard covered" : "threatCard danger";
+
+    if (result.sprite)
+    {
+        const sprite = document.createElement("img");
+        sprite.src = result.sprite;
+        sprite.alt = result.name;
+        sprite.className = "threatSprite";
+        card.appendChild(sprite);
+    }
+
+    const name = document.createElement("p");
+    name.className = "threatName";
+    name.textContent = capitalize(result.name);
+
+    const reason = document.createElement("p");
+    reason.className = "threatReason";
+    reason.textContent = result.threatReason;
+
+    const status = document.createElement("span");
+    status.className = `threatStatus ${result.covered ? "covered" : "danger"}`;
+    status.textContent = result.covered ? "Covered" : "No Counter";
+
+    card.append(
+        name,
+        buildTypeContainer(result.types),
+        reason,
+        buildThreatAnswerLine("Hits it super effectively", result.offensiveAnswers),
+        buildThreatAnswerLine("Resists its STAB types", result.defensiveAnswers),
+        status
+    );
+    return card;
+}
+
+async function scanForThreats()
+{
     if (team.length === 0)
     {
         console.warn("Scan cannot be completed with empty team. Please add a Pokemon and try again.");
@@ -913,65 +950,23 @@ scanBtn.addEventListener("click", async () => {
     threatReport.innerHTML = `<p class="message">Scanning for threats...</p>`;
 
     const results = await checkTeamVulnerabilities(team, TOP_THREATS);
+    threatReport.replaceChildren(...results.map(result => buildThreatCard(result)));
+}
 
-    threatReport.innerHTML = "";
-
-    results.forEach(result => {
-        const card = document.createElement("div");
-        card.className = result.covered ? "threatCard covered" : "threatCard danger";
-
-        if (result.sprite)
-        {
-            const img = document.createElement("img");
-            img.src = result.sprite;
-            img.alt = result.name;
-            img.className = "threatSprite";
-            card.appendChild(img);
-        }
-
-        const nameEl = document.createElement("p");
-        nameEl.className = "threatName";
-        nameEl.textContent = capitalize(result.name);
-        card.appendChild(nameEl);
-
-        const typeContainer = document.createElement("div");
-        typeContainer.className = "typeContainer";
-        result.types.forEach(t => {
-            const badge = document.createElement("span");
-            badge.className = `typeBadge type-${t}`;
-            badge.textContent = capitalize(t);
-            typeContainer.appendChild(badge);
-        });
-        card.appendChild(typeContainer);
-
-        const reasonEl = document.createElement("p");
-        reasonEl.className = "threatReason";
-        reasonEl.textContent = result.threatReason;
-        card.appendChild(reasonEl);
-
-        card.appendChild(buildThreatAnswerLine("Hits it super effectively", result.offensiveAnswers));
-        card.appendChild(buildThreatAnswerLine("Resists its STAB types", result.defensiveAnswers));
-
-        const statusEl = document.createElement("span");
-        statusEl.className = `threatStatus ${result.covered ? "covered" : "danger"}`;
-        statusEl.textContent = result.covered ? "Covered" : "No Counter";
-        card.appendChild(statusEl);
-
-        threatReport.appendChild(card);
+function bindEventListeners()
+{
+    searchBtn.addEventListener("click", searchPokemon);
+    randomBtn.addEventListener("click", randomPokemon);
+    pokemonInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") searchPokemon();
     });
-});
+    exportBtn.addEventListener("click", exportTeamToShowdown);
+    scanBtn.addEventListener("click", scanForThreats);
+    sortableHeaders.forEach(header => {
+        header.addEventListener("click", () => toggleSort(header.dataset.key));
+    });
+}
 
-sortableHeaders.forEach(th => {
-    th.addEventListener("click", () => toggleSort(th.dataset.key));
-});
-searchBtn.addEventListener("click", searchPokemon);
-randomBtn.addEventListener("click", randomPokemon);
-pokemonInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter")
-    {
-        searchPokemon();
-    }
-});
-
+bindEventListeners();
 displayTeam();
 loadPokedexData();
