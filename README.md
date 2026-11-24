@@ -18,7 +18,11 @@ Planning a competitive team means juggling type coverage, synergy and the curren
 - **Showdown export.** Copies your team as Pokémon Showdown paste text. For now it's species and ability only, with no moves or EVs.
 - **Saved without an account.** Your team lives in `localStorage` and survives refreshes. Teams saved by older versions get migrated on load.
 
+<<<<<<< HEAD
+**Net type coverage, not raw type coverage.** The hard part of this project wasn't listing each Pokémon's weaknesses — it's computing what the *team* is actually weak to. If one teammate resists or is immune to a type another is weak to, that weakness doesn't matter at the team level. The coverage chart multiplies every attacking type against each member's types using a local 18×18 effectiveness chart, adjusts for the member's selected ability (Levitate, Flash Fire, Wonder Guard, Filter, and others), and highlights the types where more members are weak than resistant.
+=======
 ## What I learned
+>>>>>>> 91578b7dac616d96fcfcce4a4482380f43af48b6
 
 - A thousand sequential requests is a frozen page. The Pokédex loads all 1,025 Pokémon with `async/await` and `Promise.all()` in batches of 250, with a progress bar. Each Pokémon is cached in `localStorage`, so repeat visits skip the network.
 - Type matchups live in a local `typeChart.js`, so the weakness chart doesn't hit the API on every render. I used to re-fetch them each time, which was wasteful and slow.
@@ -32,7 +36,16 @@ Planning a competitive team means juggling type coverage, synergy and the curren
 
 ## Stack
 
+<<<<<<< HEAD
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white)
+![PokeAPI](https://img.shields.io/badge/PokeAPI-REST-red?style=flat-square)
+
+No frameworks — vanilla JS, DOM built with small `createElement` helpers, data attributes for sortable columns. Deployed as a static site on GitHub Pages and Vercel.
+=======
 Vanilla JavaScript, HTML, CSS and [PokeAPI](https://pokeapi.co). No frameworks. Deployed as a static site on GitHub Pages and Vercel.
+>>>>>>> 91578b7dac616d96fcfcce4a4482380f43af48b6
 
 ## Run it locally
 
