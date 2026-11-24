@@ -1,4 +1,17 @@
-const pokeAPI = "https://pokeapi.co/api/v2";
+const POKE_API_BASE_URL = "https://pokeapi.co/api/v2";
+const POKEDEX_SIZE = 1025;
+const POKEDEX_BATCH_SIZE = 250;
+const MAX_TEAM_SIZE = 6;
+const MAX_BASE_STAT = 255;
+
+// Storage keys are read back on every visit; renaming them would orphan existing saved teams and caches.
+const TEAM_STORAGE_KEY = "pokemonTeam";
+const POKEMON_CACHE_PREFIX = "pokemon_";
+
+const MESSAGE_DURATION_MS = 3000;
+const COPY_FEEDBACK_DURATION_MS = 2000;
+
+const FRACTION_LABELS = { 0.5: "½", 0.25: "¼", 0.125: "⅛" };
 
 const searchBtn = document.getElementById("searchBtn");
 const randomBtn = document.getElementById("randomBtn");
@@ -9,6 +22,12 @@ const teamContainer = document.getElementById("teamContainer");
 const exportBtn = document.getElementById("exportBtn");
 const scanBtn = document.getElementById("scanBtn");
 const threatReport = document.getElementById("threatReport");
+const pokedexStatus = document.getElementById("pokedexStatus");
+const pokedexSearch = document.getElementById("pokedexSearch");
+const pokedexBody = document.getElementById("pokedexBody");
+const sortableHeaders = document.querySelectorAll("#pokedexTable th.sortable");
+const POKEDEX_COLUMN_COUNT = document.querySelectorAll("#pokedexTable thead th").length;
+const EXPORT_BUTTON_LABEL = exportBtn.textContent;
 
 function getDefaultAbility(abilities)
 {
@@ -36,7 +55,7 @@ function loadTeam()
 {
     try
     {
-        const savedTeam = JSON.parse(localStorage.getItem("pokemonTeam"));
+        const savedTeam = JSON.parse(localStorage.getItem(TEAM_STORAGE_KEY));
         if (!Array.isArray(savedTeam)) return [];
 
         return savedTeam
@@ -53,19 +72,15 @@ function loadTeam()
 let team = loadTeam();
 let currentPokemon = null;
 let pokedexData = [];
-let filteredData = [];
+let visiblePokedexData = [];
 let sortKey = "id";
 let sortDesc = false;
-
-const AMOUNT_OF_POKEMON = 1025;
-
-const FRACTION_LABELS = { 0.5: "½", 0.25: "¼", 0.125: "⅛" };
 
 function saveTeam()
 {
     try
     {
-        localStorage.setItem("pokemonTeam", JSON.stringify(team));
+        localStorage.setItem(TEAM_STORAGE_KEY, JSON.stringify(team));
     }
     catch (error)
     {
@@ -81,7 +96,7 @@ function showMessage(message, isError = false)
     msg.textContent = message;
     msg.className = isError ? "message error" : "message success";
     pokemonDisplay.prepend(msg);
-    setTimeout(() => msg.remove(), 3000);
+    setTimeout(() => msg.remove(), MESSAGE_DURATION_MS);
 }
 
 function capitalize(str)
@@ -118,9 +133,9 @@ function toShowdownName(data)
     return formatName(data.is_default ? data.species.name : data.name);
 }
 
-function generateShowdownText(team)
+function generateShowdownText(teamMembers)
 {
-    return team.map(pokemon => {
+    return teamMembers.map(pokemon => {
         const speciesLine = pokemon.showdownName ?? formatName(pokemon.name);
         const ability = pokemon.selectedAbility;
 
@@ -128,19 +143,19 @@ function generateShowdownText(team)
     }).join("\n\n");
 }
 
-function getMultiplier(attackType, defenderTypes)
+function getTypeMultiplier(attackType, defenderTypes)
 {
     return defenderTypes.reduce((multiplier, defenderType) => multiplier * (TYPE_EFFECTIVENESS[attackType][defenderType] ?? 1), 1);
 }
 
-// Type-chart multiplier adjusted for the defender's selected ability. Use getMultiplier for pure type math.
+// Type-chart multiplier adjusted for the defender's selected ability. Use getTypeMultiplier for pure type math.
 function getDamageTaken(attackType, pokemon)
 {
-    const typeMultiplier = getMultiplier(attackType, pokemon.types || []);
+    const typeMultiplier = getTypeMultiplier(attackType, pokemon.types || []);
     const ability = pokemon.selectedAbility;
 
     if (ability === WONDER_GUARD) return typeMultiplier >= 2 ? typeMultiplier : 0;
-    if (SUPER_EFFECTIVE_REDUCERS.has(ability) && typeMultiplier > 1) return typeMultiplier * 0.75;
+    if (SUPER_EFFECTIVE_REDUCERS.has(ability) && typeMultiplier > 1) return typeMultiplier * SUPER_EFFECTIVE_REDUCTION;
 
     return typeMultiplier * (ABILITY_DAMAGE_MODIFIERS[ability]?.[attackType] ?? 1);
 }
@@ -151,7 +166,7 @@ function formatMultiplier(value)
     return FRACTION_LABELS[value] ?? String(value);
 }
 
-function multiplierClass(value)
+function getMultiplierClass(value)
 {
     if (value === 0) return "multImmune";
     if (value <= 0.25) return "multQuadResist";
@@ -163,10 +178,10 @@ function multiplierClass(value)
 
 // Offensive answers carry a type that hits the threat super effectively (a STAB move of that type).
 // Defensive answers resist or are immune to every one of the threat's STAB types.
-function findThreatAnswers(threat, team)
+function findThreatAnswers(threat, teamMembers)
 {
-    const offensive = team.filter(pokemon => (pokemon.types || []).some(type => getMultiplier(type, threat.types) >= 2));
-    const defensive = team.filter(pokemon => threat.types.every(type => getDamageTaken(type, pokemon) < 1));
+    const offensive = teamMembers.filter(pokemon => (pokemon.types || []).some(type => getTypeMultiplier(type, threat.types) >= 2));
+    const defensive = teamMembers.filter(pokemon => threat.types.every(type => getDamageTaken(type, pokemon) < 1));
 
     return {
         offensive: offensive.map(pokemon => pokemon.name),
@@ -178,7 +193,7 @@ async function fetchThreatSprite(threat)
 {
     try
     {
-        const response = await fetch(`${pokeAPI}/pokemon/${threat.name}`);
+        const response = await fetch(`${POKE_API_BASE_URL}/pokemon/${threat.name}`);
         if (!response.ok) throw new Error(`PokeAPI returned ${response.status}`);
         const data = await response.json();
 
@@ -191,12 +206,12 @@ async function fetchThreatSprite(threat)
     }
 }
 
-async function checkTeamVulnerabilities(team, threats)
+async function checkTeamVulnerabilities(teamMembers, threats)
 {
     const sprites = await Promise.all(threats.map(fetchThreatSprite));
 
     return threats.map((threat, index) => {
-        const answers = findThreatAnswers(threat, team);
+        const answers = findThreatAnswers(threat, teamMembers);
 
         return {
             name: threat.name,
@@ -212,21 +227,19 @@ async function checkTeamVulnerabilities(team, threats)
 
 async function loadPokedexData()
 {
-    const pokedexStatus = document.getElementById("pokedexStatus");
     pokedexStatus.textContent = "Loading Pokemon...";
 
     try
     {
-        const listResponse = await fetch(`${pokeAPI}/pokemon?limit=1025&offset=0`);
+        const listResponse = await fetch(`${POKE_API_BASE_URL}/pokemon?limit=${POKEDEX_SIZE}&offset=0`);
         const listData = await listResponse.json();
-        const batchSize = 250;
         pokedexData = [];
 
-        for (let i = 0; i < listData.results.length; i += batchSize)
+        for (let i = 0; i < listData.results.length; i += POKEDEX_BATCH_SIZE)
         {
-            const batch = listData.results.slice(i, i + batchSize);
+            const batch = listData.results.slice(i, i + POKEDEX_BATCH_SIZE);
             const detailPromises = batch.map(p => {
-                const cached = localStorage.getItem(`pokemon_${p.name}`);
+                const cached = localStorage.getItem(`${POKEMON_CACHE_PREFIX}${p.name}`);
                 if (cached)
                 {
                     console.count("CACHE HIT");
@@ -239,7 +252,7 @@ async function loadPokedexData()
                 return fetch(p.url).then(r => r.json()).then(data => {
                     try
                     {
-                        localStorage.setItem(`pokemon_${p.name}`, JSON.stringify(data));
+                        localStorage.setItem(`${POKEMON_CACHE_PREFIX}${p.name}`, JSON.stringify(data));
                     }
                     catch (error)
                     {
@@ -264,45 +277,44 @@ async function loadPokedexData()
 
             pokedexStatus.textContent = `Loading... ${pokedexData.length} of ${listData.results.length} Pokemon`;
 
-            filteredData = [...pokedexData];
-            applySort();
-            renderTable(filteredData);
+            visiblePokedexData = [...pokedexData];
+            sortVisiblePokedexData();
+            renderTable(visiblePokedexData);
         }
 
         pokedexStatus.textContent = `Showing ${pokedexData.length} Pokemon`;
 
-        document.getElementById("pokedexSearch").addEventListener("input", (e) => {
+        pokedexSearch.addEventListener("input", (e) => {
             const query = e.target.value.toLowerCase().trim();
-            filteredData = pokedexData.filter(p => p.name.includes(query));
-            applySort();
-            renderTable(filteredData);
+            visiblePokedexData = pokedexData.filter(p => p.name.includes(query));
+            sortVisiblePokedexData();
+            renderTable(visiblePokedexData);
         });
     }
     catch (error)
     {
-        document.getElementById("pokedexStatus").textContent = "Failed to load Pokedex. Please refresh the page.";
+        pokedexStatus.textContent = "Failed to load Pokedex. Please refresh the page.";
         console.warn("Pokedex load error: ", error);
     }
 }
 
 function renderTable(data)
 {
-    const tBody = document.getElementById("pokedexBody");
-    tBody.innerHTML = "";
+    pokedexBody.innerHTML = "";
 
     if (data.length === 0)
     {
         const emptyRow = document.createElement("tr");
         const emptyCell = document.createElement("td");
 
-        emptyCell.colSpan = 11;
+        emptyCell.colSpan = POKEDEX_COLUMN_COUNT;
         emptyCell.textContent = "No Pokemon found";
         emptyCell.style.textAlign = "center";
         emptyCell.style.padding = "20px";
 
         emptyRow.appendChild(emptyCell);
-        tBody.appendChild(emptyRow);
-        document.getElementById("pokedexStatus").textContent = `Showing 0 of ${pokedexData.length} Pokémon`;
+        pokedexBody.appendChild(emptyRow);
+        pokedexStatus.textContent = `Showing 0 of ${pokedexData.length} Pokémon`;
         return;
     }
 
@@ -356,15 +368,15 @@ function renderTable(data)
 
         addCell.appendChild(addBtn);
         row.appendChild(addCell);
-        tBody.appendChild(row);
+        pokedexBody.appendChild(row);
     });
 
-    document.getElementById("pokedexStatus").textContent = `Showing ${data.length} of ${pokedexData.length} Pokémon`;
+    pokedexStatus.textContent = `Showing ${data.length} of ${pokedexData.length} Pokémon`;
 }
 
-function applySort()
+function sortVisiblePokedexData()
 {
-    filteredData.sort((a, b) => {
+    visiblePokedexData.sort((a, b) => {
         if (typeof a[sortKey] === "string")
         {
             return sortDesc ? b[sortKey].localeCompare(a[sortKey]) : a[sortKey].localeCompare(b[sortKey]);
@@ -373,7 +385,7 @@ function applySort()
     });
 }
 
-function sortData(key)
+function toggleSort(key)
 {
     if (sortKey === key)
     {
@@ -385,9 +397,9 @@ function sortData(key)
         sortDesc = false;
     }
 
-    applySort();
+    sortVisiblePokedexData();
 
-    document.querySelectorAll("#pokedexTable th.sortable").forEach(th => {
+    sortableHeaders.forEach(th => {
         th.classList.remove("sorted", "desc");
     });
 
@@ -401,7 +413,7 @@ function sortData(key)
         }
     }
 
-    renderTable(filteredData);
+    renderTable(visiblePokedexData);
 }
 
 function buildCoverageHeader()
@@ -464,13 +476,13 @@ function buildCoverageRow(attackType)
 
     team.forEach(pokemon => {
         const multiplier = getDamageTaken(attackType, pokemon);
-        const changedByAbility = multiplier !== getMultiplier(attackType, pokemon.types || []);
+        const changedByAbility = multiplier !== getTypeMultiplier(attackType, pokemon.types || []);
 
         if (multiplier > 1) weakCount++;
         if (multiplier < 1) resistCount++;
 
         const cell = document.createElement("td");
-        cell.className = `coverageCell ${multiplierClass(multiplier)}`;
+        cell.className = `coverageCell ${getMultiplierClass(multiplier)}`;
         cell.textContent = formatMultiplier(multiplier);
         cell.title = `${capitalize(pokemon.name)} takes ${multiplier}× from ${capitalize(attackType)}`;
 
@@ -538,7 +550,7 @@ function displayWeaknessChart()
     weaknessChart.replaceChildren(panel);
 }
 
-function statColor(value)
+function getStatColor(value)
 {
     if (value >= 90) return "#48c048";
     if (value >= 60) return "#f8d030";
@@ -619,7 +631,7 @@ function displayTeam()
             <div class="statRow">
                 <span class="statLabel">${s.name}</span>
                 <div class="statBarBg">
-                    <div class="statBarFill" style="width: ${Math.min(s.value / 255 * 100, 100)}%; background-color: ${statColor(s.value)}"></div>
+                    <div class="statBarFill" style="width: ${Math.min(s.value / MAX_BASE_STAT * 100, 100)}%; background-color: ${getStatColor(s.value)}"></div>
                 </div>
                 <span class="statValue">${s.value}</span>
             </div>
@@ -661,14 +673,14 @@ function createTeamMember(pokemon)
 function refreshPokedexTable()
 {
     if (pokedexData.length === 0) return;
-    renderTable(filteredData);
+    renderTable(visiblePokedexData);
 }
 
 function addToTeam()
 {
     if (!currentPokemon) return;
 
-    if (team.length >= 6)
+    if (team.length >= MAX_TEAM_SIZE)
     {
         showMessage("Your team is full! (Maximum 6 Pokémon)", true);
         return;
@@ -720,11 +732,11 @@ function normalizeSearchQuery(input)
 // fall back to /pokemon-species and resolve to its default variety. Returns null when nothing matches.
 async function fetchPokemonByNameOrId(query)
 {
-    const response = await fetch(`${pokeAPI}/pokemon/${query}`);
+    const response = await fetch(`${POKE_API_BASE_URL}/pokemon/${query}`);
     if (response.ok) return response.json();
     if (response.status !== 404) throw new Error(`PokeAPI returned ${response.status}`);
 
-    const speciesResponse = await fetch(`${pokeAPI}/pokemon-species/${query}`);
+    const speciesResponse = await fetch(`${POKE_API_BASE_URL}/pokemon-species/${query}`);
     if (speciesResponse.status === 404) return null;
     if (!speciesResponse.ok) throw new Error(`PokeAPI returned ${speciesResponse.status}`);
 
@@ -765,7 +777,7 @@ async function searchPokemon()
         <div class="statRow">
             <span class="statLabel">${s.name}</span>
             <div class="statBarBg">
-                <div class="statBarFill" style="width: ${Math.min(s.value / 255 * 100, 100)}%; background-color: ${statColor(s.value)}"></div>
+                <div class="statBarFill" style="width: ${Math.min(s.value / MAX_BASE_STAT * 100, 100)}%; background-color: ${getStatColor(s.value)}"></div>
             </div>
             <span class="statValue">${s.value}</span>
         </div>
@@ -797,13 +809,13 @@ async function searchPokemon()
 
 async function randomPokemon()
 {
-    const randomId = Math.floor(Math.random() * AMOUNT_OF_POKEMON) + 1;
+    const randomId = Math.floor(Math.random() * POKEDEX_SIZE) + 1;
     pokemonInput.value = "";
     pokemonDisplay.innerHTML = `<p class="message">Getting a random Pokémon...</p>`;
 
     try
     {
-        const response = await fetch(`${pokeAPI}/pokemon/${randomId}`);
+        const response = await fetch(`${POKE_API_BASE_URL}/pokemon/${randomId}`);
         if (!response.ok) throw new Error("Not found");
         const data = await response.json();
 
@@ -814,7 +826,7 @@ async function randomPokemon()
             <div class="statRow">
                 <span class="statLabel">${s.name}</span>
                 <div class="statBarBg">
-                    <div class="statBarFill" style="width: ${Math.min(s.value / 255 * 100, 100)}%; background-color: ${statColor(s.value)}"></div>
+                    <div class="statBarFill" style="width: ${Math.min(s.value / MAX_BASE_STAT * 100, 100)}%; background-color: ${getStatColor(s.value)}"></div>
                 </div>
                 <span class="statValue">${s.value}</span>
             </div>
@@ -854,9 +866,9 @@ exportBtn.addEventListener("click", () => {
         exportBtn.textContent = "Copied!";
         exportBtn.classList.add("copied");
         setTimeout(() => {
-            exportBtn.textContent = "Export To Pokemon Showdown";
+            exportBtn.textContent = EXPORT_BUTTON_LABEL;
             exportBtn.classList.remove("copied");
-        }, 2000);
+        }, COPY_FEEDBACK_DURATION_MS);
     }).catch(() => {
         showMessage("Failed to copy to clipboard. Please try again.", true);
     });
@@ -935,8 +947,8 @@ scanBtn.addEventListener("click", async () => {
     });
 });
 
-document.querySelectorAll("#pokedexTable th.sortable").forEach(th => {
-    th.addEventListener("click", () => sortData(th.dataset.key));
+sortableHeaders.forEach(th => {
+    th.addEventListener("click", () => toggleSort(th.dataset.key));
 });
 searchBtn.addEventListener("click", searchPokemon);
 randomBtn.addEventListener("click", randomPokemon);

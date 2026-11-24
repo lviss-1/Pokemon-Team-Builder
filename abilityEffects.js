@@ -20,8 +20,9 @@ const ABILITY_DAMAGE_MODIFIERS = {
     "fluffy":          { fire: 2 }
 };
 
-// Multiply super-effective damage by 0.75.
+// These abilities multiply super-effective damage by SUPER_EFFECTIVE_REDUCTION.
 const SUPER_EFFECTIVE_REDUCERS = new Set(["filter", "solid-rock", "prism-armor"]);
+const SUPER_EFFECTIVE_REDUCTION = 0.75;
 
 // Only super-effective hits land.
 const WONDER_GUARD = "wonder-guard";
