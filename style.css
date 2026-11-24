@@ -602,6 +602,11 @@ button:active {
     vertical-align: middle;
 }
 
+#pokedexTable td.pokedexEmptyCell {
+    text-align: center;
+    padding: 20px;
+}
+
 .pokedexSprite {
     width: 48px;
     height: 48px;

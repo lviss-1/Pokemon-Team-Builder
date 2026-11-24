@@ -3,6 +3,7 @@ const POKEDEX_SIZE = 1025;
 const POKEDEX_BATCH_SIZE = 250;
 const MAX_TEAM_SIZE = 6;
 const MAX_BASE_STAT = 255;
+const POKEDEX_STAT_KEYS = ["hp", "attack", "defense", "specialAttack", "specialDefense", "speed"];
 
 // Storage keys are read back on every visit; renaming them would orphan existing saved teams and caches.
 const TEAM_STORAGE_KEY = "pokemonTeam";
@@ -225,6 +226,48 @@ async function checkTeamVulnerabilities(teamMembers, threats)
     });
 }
 
+function getPokemonCacheKey(pokemonName)
+{
+    return `${POKEMON_CACHE_PREFIX}${pokemonName}`;
+}
+
+async function fetchAndCachePokemonDetail(entry)
+{
+    const response = await fetch(entry.url);
+    const data = await response.json();
+
+    try
+    {
+        localStorage.setItem(getPokemonCacheKey(entry.name), JSON.stringify(data));
+    }
+    catch (error)
+    {
+        console.warn(`Could not cache ${entry.name}: ${error.name}`);
+    }
+
+    return data;
+}
+
+function getPokemonDetail(entry)
+{
+    const cached = localStorage.getItem(getPokemonCacheKey(entry.name));
+
+    if (cached)
+    {
+        console.count("CACHE HIT");
+        return Promise.resolve(JSON.parse(cached));
+    }
+
+    console.count("CACHE MISS (network fetch)");
+    return fetchAndCachePokemonDetail(entry);
+}
+
+function toPokedexRow(data)
+{
+    const [hp, attack, defense, specialAttack, specialDefense, speed] = data.stats.map(stat => stat.base_stat);
+    return { ...normalizePokemon(data), hp, attack, defense, specialAttack, specialDefense, speed };
+}
+
 async function loadPokedexData()
 {
     pokedexStatus.textContent = "Loading Pokemon...";
@@ -232,64 +275,24 @@ async function loadPokedexData()
     try
     {
         const listResponse = await fetch(`${POKE_API_BASE_URL}/pokemon?limit=${POKEDEX_SIZE}&offset=0`);
-        const listData = await listResponse.json();
+        const entries = (await listResponse.json()).results;
         pokedexData = [];
 
-        for (let i = 0; i < listData.results.length; i += POKEDEX_BATCH_SIZE)
+        for (let i = 0; i < entries.length; i += POKEDEX_BATCH_SIZE)
         {
-            const batch = listData.results.slice(i, i + POKEDEX_BATCH_SIZE);
-            const detailPromises = batch.map(p => {
-                const cached = localStorage.getItem(`${POKEMON_CACHE_PREFIX}${p.name}`);
-                if (cached)
-                {
-                    console.count("CACHE HIT");
-                }
-                else
-                {
-                    console.count("CACHE MISS (network fetch)");
-                }
-                if (cached) return Promise.resolve(JSON.parse(cached));
-                return fetch(p.url).then(r => r.json()).then(data => {
-                    try
-                    {
-                        localStorage.setItem(`${POKEMON_CACHE_PREFIX}${p.name}`, JSON.stringify(data));
-                    }
-                    catch (error)
-                    {
-                        console.warn(`Could not cache ${p.name}: ${error.name}`);
-                    }
-                    return data;
-                });
-            });
-            const detailResults = await Promise.all(detailPromises);
+            const batch = entries.slice(i, i + POKEDEX_BATCH_SIZE);
+            const details = await Promise.all(batch.map(entry => getPokemonDetail(entry)));
+            pokedexData.push(...details.map(data => toPokedexRow(data)));
 
-            detailResults.forEach(data => {
-                pokedexData.push({
-                    ...normalizePokemon(data),
-                    hp: data.stats[0].base_stat,
-                    attack: data.stats[1].base_stat,
-                    defense: data.stats[2].base_stat,
-                    specialAttack: data.stats[3].base_stat,
-                    specialDefense: data.stats[4].base_stat,
-                    speed: data.stats[5].base_stat
-                });
-            });
-
-            pokedexStatus.textContent = `Loading... ${pokedexData.length} of ${listData.results.length} Pokemon`;
+            pokedexStatus.textContent = `Loading... ${pokedexData.length} of ${entries.length} Pokemon`;
 
             visiblePokedexData = [...pokedexData];
             sortVisiblePokedexData();
-            renderTable(visiblePokedexData);
+            renderPokedexTable(visiblePokedexData);
         }
 
         pokedexStatus.textContent = `Showing ${pokedexData.length} Pokemon`;
-
-        pokedexSearch.addEventListener("input", (e) => {
-            const query = e.target.value.toLowerCase().trim();
-            visiblePokedexData = pokedexData.filter(p => p.name.includes(query));
-            sortVisiblePokedexData();
-            renderTable(visiblePokedexData);
-        });
+        pokedexSearch.addEventListener("input", event => filterPokedex(event.target.value));
     }
     catch (error)
     {
@@ -298,74 +301,76 @@ async function loadPokedexData()
     }
 }
 
-function renderTable(data)
+function filterPokedex(query)
 {
-    pokedexBody.innerHTML = "";
+    const normalizedQuery = query.toLowerCase().trim();
+    visiblePokedexData = pokedexData.filter(pokemon => pokemon.name.includes(normalizedQuery));
+    sortVisiblePokedexData();
+    renderPokedexTable(visiblePokedexData);
+}
 
-    if (data.length === 0)
-    {
-        const emptyRow = document.createElement("tr");
-        const emptyCell = document.createElement("td");
+function buildTextCell(text, className)
+{
+    const cell = document.createElement("td");
+    if (className) cell.className = className;
+    cell.textContent = text;
+    return cell;
+}
 
-        emptyCell.colSpan = POKEDEX_COLUMN_COUNT;
-        emptyCell.textContent = "No Pokemon found";
-        emptyCell.style.textAlign = "center";
-        emptyCell.style.padding = "20px";
+function buildPokedexRow(pokemon)
+{
+    const row = document.createElement("tr");
 
-        emptyRow.appendChild(emptyCell);
-        pokedexBody.appendChild(emptyRow);
-        pokedexStatus.textContent = `Showing 0 of ${pokedexData.length} Pokémon`;
-        return;
-    }
+    const spriteCell = document.createElement("td");
+    const sprite = document.createElement("img");
+    sprite.src = pokemon.image;
+    sprite.alt = pokemon.name;
+    sprite.className = "pokedexSprite";
+    spriteCell.appendChild(sprite);
 
-    data.forEach(pokemon => {
-        const row = document.createElement("tr");
-        const idCell = document.createElement("td");
-        idCell.className = "pokedexId";
-        idCell.textContent = `#${String(pokemon.id).padStart(3, "0")}`;
-        row.appendChild(idCell);
+    const typeCell = document.createElement("td");
+    typeCell.append(...pokemon.types.map(type => createTypeBadge(type)));
 
-        const spriteCell = document.createElement("td");
-        const sprite = document.createElement("img");
-        sprite.src = pokemon.image;
-        sprite.alt = pokemon.name;
-        sprite.className = "pokedexSprite";
-        spriteCell.appendChild(sprite);
-        row.appendChild(spriteCell);
+    const statCells = POKEDEX_STAT_KEYS.map(key => buildTextCell(pokemon[key]));
 
-        const nameCell = document.createElement("td");
-        nameCell.className = "pokedexName";
-        nameCell.textContent = capitalize(pokemon.name);
-        row.appendChild(nameCell);
-
-        const typeCell = document.createElement("td");
-        typeCell.append(...pokemon.types.map(type => createTypeBadge(type)));
-        row.appendChild(typeCell);
-
-        [pokemon.hp, pokemon.attack, pokemon.defense, pokemon.specialAttack, pokemon.specialDefense, pokemon.speed].forEach(stat => {
-            const statCell = document.createElement("td");
-            statCell.textContent = stat;
-            row.appendChild(statCell);
-        });
-
-        const addCell = document.createElement("td");
-        const addBtn = document.createElement("button");
-        const isOnTeam = team.some(p => p.name === pokemon.name);
-        addBtn.className = "pokedexAddBtn";
-        addBtn.textContent = isOnTeam ? "Added" : "Add";
-        addBtn.disabled = isOnTeam;
-
-        addBtn.addEventListener("click", () => {
-            currentPokemon = pokemon;
-            addToTeam();
-        });
-
-        addCell.appendChild(addBtn);
-        row.appendChild(addCell);
-        pokedexBody.appendChild(row);
+    const addCell = document.createElement("td");
+    const addButton = document.createElement("button");
+    const isOnTeam = team.some(member => member.name === pokemon.name);
+    addButton.className = "pokedexAddBtn";
+    addButton.textContent = isOnTeam ? "Added" : "Add";
+    addButton.disabled = isOnTeam;
+    addButton.addEventListener("click", () => {
+        currentPokemon = pokemon;
+        addToTeam();
     });
+    addCell.appendChild(addButton);
 
-    pokedexStatus.textContent = `Showing ${data.length} of ${pokedexData.length} Pokémon`;
+    row.append(
+        buildTextCell(`#${String(pokemon.id).padStart(3, "0")}`, "pokedexId"),
+        spriteCell,
+        buildTextCell(capitalize(pokemon.name), "pokedexName"),
+        typeCell,
+        ...statCells,
+        addCell
+    );
+    return row;
+}
+
+function buildEmptyPokedexRow()
+{
+    const cell = buildTextCell("No Pokemon found", "pokedexEmptyCell");
+    cell.colSpan = POKEDEX_COLUMN_COUNT;
+
+    const row = document.createElement("tr");
+    row.appendChild(cell);
+    return row;
+}
+
+function renderPokedexTable(rows)
+{
+    const tableRows = rows.length > 0 ? rows.map(pokemon => buildPokedexRow(pokemon)) : [buildEmptyPokedexRow()];
+    pokedexBody.replaceChildren(...tableRows);
+    pokedexStatus.textContent = `Showing ${rows.length} of ${pokedexData.length} Pokémon`;
 }
 
 function sortVisiblePokedexData()
@@ -392,22 +397,17 @@ function toggleSort(key)
     }
 
     sortVisiblePokedexData();
+    updateSortIndicators();
+    renderPokedexTable(visiblePokedexData);
+}
 
-    sortableHeaders.forEach(th => {
-        th.classList.remove("sorted", "desc");
+function updateSortIndicators()
+{
+    sortableHeaders.forEach(header => {
+        const isActive = header.dataset.key === sortKey;
+        header.classList.toggle("sorted", isActive);
+        header.classList.toggle("desc", isActive && sortDesc);
     });
-
-    const activeHeader = document.querySelector(`#pokedexTable th[data-key="${key}"]`);
-    if (activeHeader)
-    {
-        activeHeader.classList.add("sorted");
-        if (sortDesc)
-        {
-            activeHeader.classList.add("desc");
-        }
-    }
-
-    renderTable(visiblePokedexData);
 }
 
 function createTypeBadge(type)
@@ -735,7 +735,7 @@ function createTeamMember(pokemon)
 function refreshPokedexTable()
 {
     if (pokedexData.length === 0) return;
-    renderTable(visiblePokedexData);
+    renderPokedexTable(visiblePokedexData);
 }
 
 function addToTeam()
