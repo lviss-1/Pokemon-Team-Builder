@@ -55,7 +55,7 @@ header {
     border-radius: 10px;
 }
 
-.site-title {
+.siteTitle {
     font-family: var(--font-pixel);
     font-size: 1.4rem;
     color: var(--surface);
@@ -211,7 +211,7 @@ button:active {
     image-rendering: pixelated;
 }
 
-.pokemon-name {
+.teamMemberName {
     font-family: var(--font-pixel);
     font-size: 0.55rem;
     margin: 8px 0;
@@ -219,7 +219,7 @@ button:active {
     line-height: 1.6;
 }
 
-.ability-text {
+.abilityText {
     font-size: 0.95rem;
     color: var(--navy-700);
     margin: 4px 0 8px 0;
@@ -243,18 +243,18 @@ button:active {
     border-color: var(--yellow);
 }
 
-.remove-btn {
+.removeBtn {
     background-color: var(--red);
     color: var(--white);
     width: 100%;
     margin-top: 8px;
 }
 
-.remove-btn:hover {
+.removeBtn:hover {
     background-color: var(--red-dark);
 }
 
-.type-container, .typeContainer {
+.typeContainer {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -669,7 +669,7 @@ button:active {
 .type-steel    { background-color: #b8b8d0; color: var(--badge-dark-text); }
 
 @media (max-width: 600px) {
-    .site-title {
+    .siteTitle {
         font-size: 0.9rem;
     }
     .searchSection input {

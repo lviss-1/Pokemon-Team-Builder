@@ -564,7 +564,7 @@ function changeAbility(pokemon, abilityName)
 function buildAbilityPicker(pokemon)
 {
     const container = document.createElement("div");
-    container.className = "ability-text";
+    container.className = "abilityText";
 
     if (pokemon.abilities.length <= 1)
     {
@@ -621,16 +621,16 @@ function displayTeam()
         `).join("");
 
         card.innerHTML = `<img src="${pokemon.image}" alt="${pokemon.name}"/>
-            <p class="pokemon-name">${capitalize(pokemon.name)}</p>
-            <div class="type-container">${typeBadges}</div>
+            <p class="teamMemberName">${capitalize(pokemon.name)}</p>
+            <div class="typeContainer">${typeBadges}</div>
             <div class="statBlock">${statBars}</div>
-            <button class="remove-btn" data-index="${index}">Remove</button>`;
+            <button class="removeBtn" data-index="${index}">Remove</button>`;
 
         card.insertBefore(buildAbilityPicker(pokemon), card.querySelector(".statBlock"));
         teamContainer.appendChild(card);
     });
 
-    document.querySelectorAll(".remove-btn").forEach(btn => {
+    document.querySelectorAll(".removeBtn").forEach(btn => {
         btn.addEventListener("click", (e) => {
             const index = parseInt(e.target.dataset.index);
             removeFromTeam(index);
@@ -773,7 +773,7 @@ async function searchPokemon()
                 <h2>${capitalize(currentPokemon.name)}</h2>
                 <img src="${currentPokemon.image}" alt="${currentPokemon.name}">
                 <div class="typeContainer">${typeBadges}</div>
-                <p class="ability-text">Ability: ${abilitiesDisplay}</p>
+                <p class="abilityText">Ability: ${abilitiesDisplay}</p>
                 <div class="statBlock">${statBars}</div>
                 <button id="addBtn">Add to Team</button>
             </div>
@@ -819,7 +819,7 @@ async function randomPokemon()
                 <img src="${currentPokemon.image}" alt="${currentPokemon.name}" class="searchSprite"/>
                 <h2 class="pokemonName">${capitalize(currentPokemon.name)}</h2>
                 <div class="typeContainer">${typeBadges}</div>
-                <p class="ability-text">Ability: ${abilitiesDisplay}</p>
+                <p class="abilityText">Ability: ${abilitiesDisplay}</p>
                 <div class="statBlock">${statsBars}</div>
                 <button id="addBtn">Add to Team</button>
             </div>
@@ -900,7 +900,7 @@ scanBtn.addEventListener("click", async () => {
         card.appendChild(nameEl);
 
         const typeContainer = document.createElement("div");
-        typeContainer.className = "type-container";
+        typeContainer.className = "typeContainer";
         result.types.forEach(t => {
             const badge = document.createElement("span");
             badge.className   = `typeBadge type-${t}`;
