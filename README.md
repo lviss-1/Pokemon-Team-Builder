@@ -13,7 +13,7 @@ Planning a competitive Pokémon team means juggling three separate concerns — 
 
 ## Technical highlights
 
-**Net type coverage, not raw type coverage.** The hard part of this project wasn't listing each Pokémon's weaknesses — it's computing what the *team* is actually weak to. If one teammate resists or is immune to a type another is weak to, that weakness doesn't matter at the team level. The engine pulls per-type `damage_relations` from PokeAPI and reduces them with JavaScript `Set` operations (union, difference) into the team's real net weaknesses, resistances, and immunities.
+**Net type coverage, not raw type coverage.** The hard part of this project wasn't listing each Pokémon's weaknesses — it's computing what the *team* is actually weak to. If one teammate resists or is immune to a type another is weak to, that weakness doesn't matter at the team level. The coverage chart multiplies every attacking type against each member's types using a local 18×18 effectiveness chart, adjusts for the member's selected ability (Levitate, Flash Fire, Wonder Guard, Filter, and others), and highlights the types where more members are weak than resistant.
 
 **Meta-aware, not just type-aware.** A team can have perfect type coverage and still lose to the current metagame. The team gets checked against the top 8 current Smogon OU threats (a structured, maintained dataset) and flags where the team has no answer.
 
@@ -28,16 +28,7 @@ Planning a competitive Pokémon team means juggling three separate concerns — 
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white)
 ![PokeAPI](https://img.shields.io/badge/PokeAPI-REST-red?style=flat-square)
 
-No frameworks — vanilla JS, DOM manipulation with template literals, data attributes for event wiring. Deployed as a static site on GitHub Pages and Vercel.
-
-## Known limitations
-
-Being upfront about the current state, since it's checkable by anyone who opens the code:
-
-- **Type-effectiveness data isn't cached.** Only the Pokédex roster uses `localStorage` caching — `displayWeaknessChart()` currently re-fetches `/type/{type}` from PokeAPI on every render. A `typeCache` variable exists but isn't wired up yet.
-- **Showdown export produces invalid output.** `generateShowdownText()` currently emits stat lines like `- Hp: 78`, but Showdown's paste format reads any line starting with `-` as a *move*, so the output won't import. It works as a plain clipboard copy today, not a real Showdown export — fixing this means switching to EVs/IVs/nature/moveset format.
-
-Both are on the list to fix.
+No frameworks — vanilla JS, DOM built with small `createElement` helpers, data attributes for sortable columns. Deployed as a static site on GitHub Pages and Vercel.
 
 ## Run it locally
 
