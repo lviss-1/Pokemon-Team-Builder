@@ -339,13 +339,7 @@ function renderTable(data)
         row.appendChild(nameCell);
 
         const typeCell = document.createElement("td");
-        pokemon.types.forEach(t => {
-            const badge = document.createElement("span");
-            badge.className = `typeBadge type-${t}`;
-            badge.textContent = capitalize(t);
-            typeCell.appendChild(badge);
-        });
-
+        typeCell.append(...pokemon.types.map(type => createTypeBadge(type)));
         row.appendChild(typeCell);
 
         [pokemon.hp, pokemon.attack, pokemon.defense, pokemon.specialAttack, pokemon.specialDefense, pokemon.speed].forEach(stat => {
@@ -416,6 +410,110 @@ function toggleSort(key)
     renderTable(visiblePokedexData);
 }
 
+function createTypeBadge(type)
+{
+    const badge = document.createElement("span");
+    badge.className = `typeBadge type-${type}`;
+    badge.textContent = capitalize(type);
+    return badge;
+}
+
+function buildTypeContainer(types)
+{
+    const container = document.createElement("div");
+    container.className = "typeContainer";
+    container.append(...types.map(type => createTypeBadge(type)));
+    return container;
+}
+
+function buildStatRow(stat)
+{
+    const row = document.createElement("div");
+    row.className = "statRow";
+
+    const label = document.createElement("span");
+    label.className = "statLabel";
+    label.textContent = stat.name;
+
+    const barBackground = document.createElement("div");
+    barBackground.className = "statBarBg";
+
+    const barFill = document.createElement("div");
+    barFill.className = "statBarFill";
+    barFill.style.width = `${Math.min(stat.value / MAX_BASE_STAT * 100, 100)}%`;
+    barFill.style.backgroundColor = getStatColor(stat.value);
+    barBackground.appendChild(barFill);
+
+    const value = document.createElement("span");
+    value.className = "statValue";
+    value.textContent = stat.value;
+
+    row.append(label, barBackground, value);
+    return row;
+}
+
+function buildStatBlock(stats)
+{
+    const block = document.createElement("div");
+    block.className = "statBlock";
+    block.append(...stats.map(stat => buildStatRow(stat)));
+    return block;
+}
+
+function buildPokemonCard(pokemon)
+{
+    const card = document.createElement("div");
+    card.className = "pokemonCard";
+
+    const sprite = document.createElement("img");
+    sprite.src = pokemon.image;
+    sprite.alt = pokemon.name;
+
+    const name = document.createElement("h2");
+    name.textContent = capitalize(pokemon.name);
+
+    const abilities = document.createElement("p");
+    abilities.className = "abilityText";
+    abilities.textContent = `Ability: ${pokemon.abilities.map(ability => formatAbilityLabel(ability.name)).join(" / ")}`;
+
+    const addButton = document.createElement("button");
+    addButton.id = "addBtn";
+    addButton.textContent = "Add to Team";
+    addButton.addEventListener("click", addToTeam);
+
+    card.append(sprite, name, buildTypeContainer(pokemon.types), abilities, buildStatBlock(pokemon.stats), addButton);
+    return card;
+}
+
+function buildTeamCard(pokemon, index)
+{
+    const card = document.createElement("div");
+    card.className = "teamCard";
+
+    const sprite = document.createElement("img");
+    sprite.src = pokemon.image;
+    sprite.alt = pokemon.name;
+
+    const name = document.createElement("p");
+    name.className = "teamMemberName";
+    name.textContent = capitalize(pokemon.name);
+
+    const removeButton = document.createElement("button");
+    removeButton.className = "removeBtn";
+    removeButton.textContent = "Remove";
+    removeButton.addEventListener("click", () => removeFromTeam(index));
+
+    card.append(
+        sprite,
+        name,
+        buildTypeContainer(pokemon.types || []),
+        buildAbilityPicker(pokemon),
+        buildStatBlock(pokemon.stats || []),
+        removeButton
+    );
+    return card;
+}
+
 function buildCoverageHeader()
 {
     const head = document.createElement("thead");
@@ -465,10 +563,7 @@ function buildCoverageRow(attackType)
 
     const typeCell = document.createElement("th");
     typeCell.scope = "row";
-    const badge = document.createElement("span");
-    badge.className = `typeBadge type-${attackType}`;
-    badge.textContent = capitalize(attackType);
-    typeCell.appendChild(badge);
+    typeCell.appendChild(createTypeBadge(attackType));
     row.appendChild(typeCell);
 
     let weakCount = 0;
@@ -619,40 +714,7 @@ function displayTeam()
         return;
     }
 
-    teamContainer.innerHTML = "";
-
-    team.forEach((pokemon, index) => {
-        const card = document.createElement("div");
-        card.className = "teamCard";
-
-        const typeBadges = (pokemon.types || []).map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
-
-        const statBars = (pokemon.stats || []).map(s => `
-            <div class="statRow">
-                <span class="statLabel">${s.name}</span>
-                <div class="statBarBg">
-                    <div class="statBarFill" style="width: ${Math.min(s.value / MAX_BASE_STAT * 100, 100)}%; background-color: ${getStatColor(s.value)}"></div>
-                </div>
-                <span class="statValue">${s.value}</span>
-            </div>
-        `).join("");
-
-        card.innerHTML = `<img src="${pokemon.image}" alt="${pokemon.name}"/>
-            <p class="teamMemberName">${capitalize(pokemon.name)}</p>
-            <div class="typeContainer">${typeBadges}</div>
-            <div class="statBlock">${statBars}</div>
-            <button class="removeBtn" data-index="${index}">Remove</button>`;
-
-        card.insertBefore(buildAbilityPicker(pokemon), card.querySelector(".statBlock"));
-        teamContainer.appendChild(card);
-    });
-
-    document.querySelectorAll(".removeBtn").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-            const index = parseInt(e.target.dataset.index);
-            removeFromTeam(index);
-        });
-    });
+    teamContainer.replaceChildren(...team.map((pokemon, index) => buildTeamCard(pokemon, index)));
 }
 
 // Team members are copies so choosing an ability never mutates the Pokédex row or search result they came from.
@@ -772,31 +834,7 @@ async function searchPokemon()
         }
 
         currentPokemon = normalizePokemon(data);
-
-        const statBars = currentPokemon.stats.map(s => `
-        <div class="statRow">
-            <span class="statLabel">${s.name}</span>
-            <div class="statBarBg">
-                <div class="statBarFill" style="width: ${Math.min(s.value / MAX_BASE_STAT * 100, 100)}%; background-color: ${getStatColor(s.value)}"></div>
-            </div>
-            <span class="statValue">${s.value}</span>
-        </div>
-        `).join("");
-
-        const abilitiesDisplay = currentPokemon.abilities.map(a => formatAbilityLabel(a.name)).join(" / ");
-        const typeBadges = currentPokemon.types.map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
-        pokemonDisplay.innerHTML = `
-            <div class="pokemonCard">
-                <h2>${capitalize(currentPokemon.name)}</h2>
-                <img src="${currentPokemon.image}" alt="${currentPokemon.name}">
-                <div class="typeContainer">${typeBadges}</div>
-                <p class="abilityText">Ability: ${abilitiesDisplay}</p>
-                <div class="statBlock">${statBars}</div>
-                <button id="addBtn">Add to Team</button>
-            </div>
-        `;
-
-        document.getElementById("addBtn").addEventListener("click", addToTeam);
+        pokemonDisplay.replaceChildren(buildPokemonCard(currentPokemon));
         pokemonInput.value = "";
     }
     catch (error)
@@ -820,31 +858,7 @@ async function randomPokemon()
         const data = await response.json();
 
         currentPokemon = normalizePokemon(data);
-
-        const typeBadges = currentPokemon.types.map(t => `<span class="typeBadge type-${t}">${capitalize(t)}</span>`).join("");
-        const statsBars = currentPokemon.stats.map(s => `
-            <div class="statRow">
-                <span class="statLabel">${s.name}</span>
-                <div class="statBarBg">
-                    <div class="statBarFill" style="width: ${Math.min(s.value / MAX_BASE_STAT * 100, 100)}%; background-color: ${getStatColor(s.value)}"></div>
-                </div>
-                <span class="statValue">${s.value}</span>
-            </div>
-        `).join("");
-
-        const abilitiesDisplay = currentPokemon.abilities.map(a => formatAbilityLabel(a.name)).join(" / ");
-        pokemonDisplay.innerHTML = `
-            <div class="pokemonCard">
-                <img src="${currentPokemon.image}" alt="${currentPokemon.name}" class="searchSprite"/>
-                <h2 class="pokemonName">${capitalize(currentPokemon.name)}</h2>
-                <div class="typeContainer">${typeBadges}</div>
-                <p class="abilityText">Ability: ${abilitiesDisplay}</p>
-                <div class="statBlock">${statsBars}</div>
-                <button id="addBtn">Add to Team</button>
-            </div>
-        `;
-
-        document.getElementById("addBtn").addEventListener("click", addToTeam);
+        pokemonDisplay.replaceChildren(buildPokemonCard(currentPokemon));
     }
     catch (error)
     {
