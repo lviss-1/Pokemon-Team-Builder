@@ -43,7 +43,7 @@ function loadTeam()
             .filter(member => member && typeof member.name === "string")
             .map(migrateTeamMember);
     }
-    catch(error)
+    catch (error)
     {
         console.warn("Could not load saved team, starting with an empty team: ", error);
         return [];
@@ -67,7 +67,7 @@ function saveTeam()
     {
         localStorage.setItem("pokemonTeam", JSON.stringify(team));
     }
-    catch(error)
+    catch (error)
     {
         console.warn("Could not save team: ", error);
         showMessage("Couldn't save your team in this browser. Changes will be lost on refresh.", true);
@@ -184,7 +184,7 @@ async function fetchThreatSprite(threat)
 
         return data.sprites.front_default;
     }
-    catch(error)
+    catch (error)
     {
         console.warn(`Could not fetch sprite for ${threat.name}: `, error);
         return null;
@@ -213,7 +213,7 @@ async function checkTeamVulnerabilities(team, threats)
 async function loadPokedexData()
 {
     const pokedexStatus = document.getElementById("pokedexStatus");
-    pokedexStatus.textContent = "Loading Pokemon..."
+    pokedexStatus.textContent = "Loading Pokemon...";
 
     try
     {
@@ -222,23 +222,26 @@ async function loadPokedexData()
         const batchSize = 250;
         pokedexData = [];
 
-        for(let i = 0; i < listData.results.length; i += batchSize)
+        for (let i = 0; i < listData.results.length; i += batchSize)
         {
             const batch = listData.results.slice(i, i + batchSize);
             const detailPromises = batch.map(p => {
                 const cached = localStorage.getItem(`pokemon_${p.name}`);
-                if (cached) {
-                  console.count('CACHE HIT');
-                } else {
-                  console.count('CACHE MISS (network fetch)');
+                if (cached)
+                {
+                    console.count("CACHE HIT");
                 }
-                if(cached) return Promise.resolve(JSON.parse(cached));
+                else
+                {
+                    console.count("CACHE MISS (network fetch)");
+                }
+                if (cached) return Promise.resolve(JSON.parse(cached));
                 return fetch(p.url).then(r => r.json()).then(data => {
                     try
                     {
                         localStorage.setItem(`pokemon_${p.name}`, JSON.stringify(data));
                     }
-                    catch(error)
+                    catch (error)
                     {
                         console.warn(`Could not cache ${p.name}: ${error.name}`);
                     }
@@ -260,7 +263,7 @@ async function loadPokedexData()
             });
 
             pokedexStatus.textContent = `Loading... ${pokedexData.length} of ${listData.results.length} Pokemon`;
-            
+
             filteredData = [...pokedexData];
             applySort();
             renderTable(filteredData);
@@ -274,7 +277,9 @@ async function loadPokedexData()
             applySort();
             renderTable(filteredData);
         });
-    } catch(error) {
+    }
+    catch (error)
+    {
         document.getElementById("pokedexStatus").textContent = "Failed to load Pokedex. Please refresh the page.";
         console.warn("Pokedex load error: ", error);
     }
@@ -285,7 +290,7 @@ function renderTable(data)
     const tBody = document.getElementById("pokedexBody");
     tBody.innerHTML = "";
 
-    if(data.length === 0)
+    if (data.length === 0)
     {
         const emptyRow = document.createElement("tr");
         const emptyCell = document.createElement("td");
@@ -360,7 +365,7 @@ function renderTable(data)
 function applySort()
 {
     filteredData.sort((a, b) => {
-        if(typeof a[sortKey] === "string")
+        if (typeof a[sortKey] === "string")
         {
             return sortDesc ? b[sortKey].localeCompare(a[sortKey]) : a[sortKey].localeCompare(b[sortKey]);
         }
@@ -370,7 +375,7 @@ function applySort()
 
 function sortData(key)
 {
-    if(sortKey === key)
+    if (sortKey === key)
     {
         sortDesc = !sortDesc;
     }
@@ -387,10 +392,10 @@ function sortData(key)
     });
 
     const activeHeader = document.querySelector(`#pokedexTable th[data-key="${key}"]`);
-    if(activeHeader)
+    if (activeHeader)
     {
         activeHeader.classList.add("sorted");
-        if(sortDesc)
+        if (sortDesc)
         {
             activeHeader.classList.add("desc");
         }
@@ -795,7 +800,9 @@ async function randomPokemon()
     const randomId = Math.floor(Math.random() * AMOUNT_OF_POKEMON) + 1;
     pokemonInput.value = "";
     pokemonDisplay.innerHTML = `<p class="message">Getting a random Pokémon...</p>`;
-    try {
+
+    try
+    {
         const response = await fetch(`${pokeAPI}/pokemon/${randomId}`);
         if (!response.ok) throw new Error("Not found");
         const data = await response.json();
@@ -826,8 +833,8 @@ async function randomPokemon()
         `;
 
         document.getElementById("addBtn").addEventListener("click", addToTeam);
-    
-    } catch (error)
+    }
+    catch (error)
     {
         currentPokemon = null;
         pokemonDisplay.innerHTML = `<p class="message error">Failed to get random Pokémon.</p>`;
@@ -835,7 +842,7 @@ async function randomPokemon()
 }
 
 exportBtn.addEventListener("click", () => {
-    if(team.length === 0)
+    if (team.length === 0)
     {
         showMessage("Your team is empty! Add some Pokémon before exporting.", true);
         return;
@@ -854,6 +861,7 @@ exportBtn.addEventListener("click", () => {
         showMessage("Failed to copy to clipboard. Please try again.", true);
     });
 });
+
 function buildThreatAnswerLine(label, pokemonNames)
 {
     const line = document.createElement("p");
@@ -869,7 +877,7 @@ function buildThreatAnswerLine(label, pokemonNames)
 }
 
 scanBtn.addEventListener("click", async () => {
-    if(team.length === 0)
+    if (team.length === 0)
     {
         console.warn("Scan cannot be completed with empty team. Please add a Pokemon and try again.");
         threatReport.innerHTML = `<p class="emptyMessage">Your team is empty! Add some Pokémon to scan for threats.</p>`;
@@ -886,16 +894,17 @@ scanBtn.addEventListener("click", async () => {
         const card = document.createElement("div");
         card.className = result.covered ? "threatCard covered" : "threatCard danger";
 
-        if (result.sprite) {
+        if (result.sprite)
+        {
             const img = document.createElement("img");
-            img.src       = result.sprite;
-            img.alt       = result.name;
+            img.src = result.sprite;
+            img.alt = result.name;
             img.className = "threatSprite";
             card.appendChild(img);
         }
 
         const nameEl = document.createElement("p");
-        nameEl.className   = "threatName";
+        nameEl.className = "threatName";
         nameEl.textContent = capitalize(result.name);
         card.appendChild(nameEl);
 
@@ -903,14 +912,14 @@ scanBtn.addEventListener("click", async () => {
         typeContainer.className = "typeContainer";
         result.types.forEach(t => {
             const badge = document.createElement("span");
-            badge.className   = `typeBadge type-${t}`;
+            badge.className = `typeBadge type-${t}`;
             badge.textContent = capitalize(t);
             typeContainer.appendChild(badge);
         });
         card.appendChild(typeContainer);
 
         const reasonEl = document.createElement("p");
-        reasonEl.className   = "threatReason";
+        reasonEl.className = "threatReason";
         reasonEl.textContent = result.threatReason;
         card.appendChild(reasonEl);
 
@@ -918,20 +927,21 @@ scanBtn.addEventListener("click", async () => {
         card.appendChild(buildThreatAnswerLine("Resists its STAB types", result.defensiveAnswers));
 
         const statusEl = document.createElement("span");
-        statusEl.className   = `threatStatus ${result.covered ? "covered" : "danger"}`;
+        statusEl.className = `threatStatus ${result.covered ? "covered" : "danger"}`;
         statusEl.textContent = result.covered ? "Covered" : "No Counter";
         card.appendChild(statusEl);
 
         threatReport.appendChild(card);
     });
 });
+
 document.querySelectorAll("#pokedexTable th.sortable").forEach(th => {
     th.addEventListener("click", () => sortData(th.dataset.key));
 });
 searchBtn.addEventListener("click", searchPokemon);
 randomBtn.addEventListener("click", randomPokemon);
 pokemonInput.addEventListener("keydown", (e) => {
-    if(e.key === "Enter") 
+    if (e.key === "Enter")
     {
         searchPokemon();
     }
