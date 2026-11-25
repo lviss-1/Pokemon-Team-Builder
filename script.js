@@ -219,6 +219,13 @@ function normalizeSearchQuery(input)
         .replace(/^-|-$/g, "");
 }
 
+async function fetchJson(url)
+{
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`PokeAPI returned ${response.status} for ${url}`);
+    return response.json();
+}
+
 // PokeAPI's /pokemon endpoint only knows form names (giratina-altered), so species names (giratina)
 // fall back to /pokemon-species and resolve to its default variety. Returns null when nothing matches.
 async function fetchPokemonByNameOrId(query)
@@ -235,19 +242,14 @@ async function fetchPokemonByNameOrId(query)
     const defaultVariety = species.varieties.find(variety => variety.is_default);
     if (!defaultVariety) return null;
 
-    const varietyResponse = await fetch(defaultVariety.pokemon.url);
-    if (!varietyResponse.ok) throw new Error(`PokeAPI returned ${varietyResponse.status}`);
-    return varietyResponse.json();
+    return fetchJson(defaultVariety.pokemon.url);
 }
 
 async function fetchThreatSprite(threat)
 {
     try
     {
-        const response = await fetch(`${POKE_API_BASE_URL}/pokemon/${threat.name}`);
-        if (!response.ok) throw new Error(`PokeAPI returned ${response.status}`);
-        const data = await response.json();
-
+        const data = await fetchJson(`${POKE_API_BASE_URL}/pokemon/${threat.name}`);
         return data.sprites.front_default;
     }
     catch (error)
@@ -278,8 +280,7 @@ function getPokemonDetail(entry)
 
 async function fetchAndCachePokemonDetail(entry)
 {
-    const response = await fetch(entry.url);
-    const data = await response.json();
+    const data = await fetchJson(entry.url);
 
     try
     {
@@ -397,15 +398,14 @@ async function randomPokemon()
 
     try
     {
-        const response = await fetch(`${POKE_API_BASE_URL}/pokemon/${randomId}`);
-        if (!response.ok) throw new Error("Not found");
-        const data = await response.json();
+        const data = await fetchJson(`${POKE_API_BASE_URL}/pokemon/${randomId}`);
 
         currentPokemon = normalizePokemon(data);
         pokemonDisplay.replaceChildren(buildPokemonCard(currentPokemon));
     }
     catch (error)
     {
+        console.warn("Random Pokémon failed: ", error);
         currentPokemon = null;
         pokemonDisplay.innerHTML = `<p class="message error">Failed to get random Pokémon.</p>`;
     }
@@ -712,7 +712,7 @@ async function scanForThreats()
 {
     if (team.length === 0)
     {
-        console.warn("Scan cannot be completed with empty team. Please add a Pokemon and try again.");
+        console.warn("Scan cannot be completed with empty team. Please add a Pokémon and try again.");
         threatReport.innerHTML = `<p class="emptyMessage">Your team is empty! Add some Pokémon to scan for threats.</p>`;
         return;
     }
@@ -815,12 +815,11 @@ function buildThreatAnswerLine(label, pokemonNames)
 // ---- Pokédex ----
 async function loadPokedexData()
 {
-    pokedexStatus.textContent = "Loading Pokemon...";
+    pokedexStatus.textContent = "Loading Pokémon...";
 
     try
     {
-        const listResponse = await fetch(`${POKE_API_BASE_URL}/pokemon?limit=${POKEDEX_SIZE}&offset=0`);
-        const entries = (await listResponse.json()).results;
+        const entries = (await fetchJson(`${POKE_API_BASE_URL}/pokemon?limit=${POKEDEX_SIZE}&offset=0`)).results;
         pokedexData = [];
 
         for (let i = 0; i < entries.length; i += POKEDEX_BATCH_SIZE)
@@ -829,20 +828,20 @@ async function loadPokedexData()
             const details = await Promise.all(batch.map(entry => getPokemonDetail(entry)));
             pokedexData.push(...details.map(data => toPokedexRow(data)));
 
-            pokedexStatus.textContent = `Loading... ${pokedexData.length} of ${entries.length} Pokemon`;
+            pokedexStatus.textContent = `Loading... ${pokedexData.length} of ${entries.length} Pokémon`;
 
             visiblePokedexData = [...pokedexData];
             sortVisiblePokedexData();
             renderPokedexTable(visiblePokedexData);
         }
 
-        pokedexStatus.textContent = `Showing ${pokedexData.length} Pokemon`;
+        pokedexStatus.textContent = `Showing ${pokedexData.length} Pokémon`;
         pokedexSearch.addEventListener("input", event => filterPokedex(event.target.value));
     }
     catch (error)
     {
-        pokedexStatus.textContent = "Failed to load Pokedex. Please refresh the page.";
-        console.warn("Pokedex load error: ", error);
+        pokedexStatus.textContent = "Failed to load Pokédex. Please refresh the page.";
+        console.warn("Pokédex load error: ", error);
     }
 }
 
@@ -951,7 +950,7 @@ function buildPokedexRow(pokemon)
 
 function buildEmptyPokedexRow()
 {
-    const cell = buildTextCell("No Pokemon found", "pokedexEmptyCell");
+    const cell = buildTextCell("No Pokémon found", "pokedexEmptyCell");
     cell.colSpan = POKEDEX_COLUMN_COUNT;
 
     const row = document.createElement("tr");

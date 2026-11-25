@@ -180,11 +180,11 @@ button:active {
     margin-top: 24px;
 }
 
-.teamSection h2 {
+.sectionTitle {
     font-family: var(--font-pixel);
     font-size: 0.8rem;
     color: var(--surface);
-    margin-bottom: 16px;
+    margin-bottom: 25px;
     letter-spacing: 2px;
     text-align: center;
 }
