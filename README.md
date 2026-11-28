@@ -4,7 +4,7 @@ Build a team, see what it's actually weak to, and check it against the competiti
 
 <img width="1470" height="956" alt="Pokémon Team Builder" src="https://github.com/user-attachments/assets/cdba69c7-3210-474c-af7e-c00bf6f90b96" />
 
-**[Live demo](https://lviss-1.github.io/Pokemon-Team-Builder)**
+**[Live demo](https://YOUR-DISTRIBUTION-DOMAIN.cloudfront.net)**
 
 ## Why
 
@@ -32,7 +32,38 @@ Planning a competitive team means juggling type coverage, synergy and the curren
 
 ## Stack
 
-Vanilla JavaScript, HTML, CSS and [PokeAPI](https://pokeapi.co). No frameworks. Deployed as a static site on GitHub Pages and Vercel.
+Vanilla JavaScript, HTML, CSS and [PokeAPI](https://pokeapi.co). Hosted on AWS (S3, CloudFront) and deployed by GitHub Actions. Also deployed on Vercel.
+
+## Deployment
+
+The site is static, so hosting is a private S3 bucket behind CloudFront. Every push to `main` deploys it through GitHub Actions.
+
+```mermaid
+flowchart LR
+    Browser -->|HTTPS| CloudFront
+    CloudFront -->|Origin Access Control| S3[(Private S3 bucket)]
+    Push[Push to main] --> GHA[GitHub Actions]
+    GHA -->|OIDC, short-lived credentials| Role[IAM deploy role]
+    Role -->|sync site files| S3
+    Role -->|invalidate cache| CloudFront
+```
+
+**Hosting**
+- The S3 bucket has Block Public Access on. Requesting an object from the S3 URL directly returns `AccessDenied`.
+- CloudFront is the only reader. It reaches the bucket through Origin Access Control, and the bucket policy allows only this one distribution.
+- CloudFront serves the site over HTTPS, and HTTP requests redirect to HTTPS.
+
+**CI/CD**
+- `.github/workflows/deploy.yml` runs on every push to `main`. It syncs the site files to S3 and then invalidates the CloudFront cache, so changes go live without manual steps.
+- Only `.html`, `.css` and `.js` files are uploaded, so `README.md`, `.git` and the workflow folder never reach the bucket.
+- GitHub authenticates to AWS with OIDC. There are no access keys stored in GitHub. Each run gets temporary credentials from an IAM role.
+
+**Security choices**
+- The role's trust policy accepts tokens only from this repository's `main` branch. I tested it by running the workflow from another branch, and AWS refused to issue credentials.
+- The role's permissions are limited to listing, writing and deleting objects in this one bucket, and creating invalidations on this one distribution.
+- Resources are tagged `project=pokemon-team-builder`.
+
+Region is us-east-2. The app still calls PokeAPI directly from the browser. A caching API in front of it is the next planned step.
 
 ## Run it locally
 
