@@ -1,0 +1,37 @@
+name: deploy site to AWS
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout repo to runner
+        uses: actions/checkout@v7
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          audience: sts.amazonaws.com
+          aws-region: us-east-2
+          role-to-assume: arn:aws:iam::450114866063:role/pokemon-team-builder-github-deploy
+
+      - name: aws S3 sync to my bucket
+        run: |
+          aws s3 sync . s3://luis-pokemon-team-builder-450114866063-us-east-2-an \
+          --exclude "*" \
+          --include "*.html" --include "*.css" --include "*.js" \
+          --delete --dryrun
+
+      - name: invalidate cloudfront cache
+        run: |
+          aws cloudfront create-invalidation \
+          --distribution-id EN4RG2TOQ08JH \
+          --paths "/*"
