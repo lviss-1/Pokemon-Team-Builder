@@ -28,7 +28,7 @@ jobs:
           aws s3 sync . s3://luis-pokemon-team-builder-450114866063-us-east-2-an \
           --exclude "*" \
           --include "*.html" --include "*.css" --include "*.js" \
-          --delete --dryrun
+          --delete
 
       - name: invalidate cloudfront cache
         run: |
