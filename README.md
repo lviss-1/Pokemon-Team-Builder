@@ -4,7 +4,7 @@ Build a team, see what it's actually weak to, and check it against the competiti
 
 <img width="1470" height="956" alt="Pokémon Team Builder" src="https://github.com/user-attachments/assets/cdba69c7-3210-474c-af7e-c00bf6f90b96" />
 
-**[Live demo](https://YOUR-DISTRIBUTION-DOMAIN.cloudfront.net)**
+**[Live demo]([https://YOUR-DISTRIBUTION-DOMAIN.cloudfront.net](https://d2akrnzjv2zlyu.cloudfront.net))**
 
 ## Why
 
